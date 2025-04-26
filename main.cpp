@@ -2,20 +2,28 @@
 #include <vector>
 #include <conio.h>
 #include <windows.h>
-#include <cstdlib> // rand
-#include <ctime> // time
-#include <algorithm> // copy
+#include <cstdlib>
+#include <ctime>
+#include <algorithm>
 using namespace std;
 
-#define END_Y 6    // 게임 종료 선
-#define TABLE_X 15 //테트리스 판 x 축 길이
-#define TABLE_Y 38 //테트리스 판 y 축 길이
+constexpr int END_Y = 0;    // 게임 종료 선
+constexpr int TABLE_WIDTH = 12; //테트리스판 가로 크기
+constexpr int TABLE_HEIGHT = 22; //테트리스판 세로 크기
 
-#define LEFT 75 // ←
-#define RIGHT 77  // →
-#define UP 72 // ↑
-#define DOWN 80 // ↓
-#define SPACE 32 // space
+constexpr int EMPTY = 0;
+constexpr int WALL = 1;
+constexpr int FALLING = 2;
+constexpr int LANDED = 3;
+constexpr int FLOOR = 4;
+constexpr int END_LINE = 5;
+
+constexpr int LEFT = 75; // ←
+constexpr int RIGHT = 77;  // →
+constexpr int UP = 72; // ↑
+constexpr int DOWN = 80; // ↓
+constexpr int SPACE = 32; // space
+constexpr int AUTO_DROP = 9999;
 
 /*커서 숨기기(0) or 보이기(1) */
 void CursorView(char show) {
@@ -194,18 +202,21 @@ private:
     int x; // x좌표
     int y; // y좌표
     int rotationCount; // shape[0][y][x], shape[1][y][x], shape[2][y][x], shaoe[3][y][x]로 4가지 상태 표현
+    bool landed;
+    clock_t fallStartTime;
 public:
     Block() {
-       
+
     }
     Block(const int shape[4][4][4]) {
-        this->x= TABLE_X / 2 - 3;
-        this->y = 1;
-        this->rotationCount = 0;
+        x = TABLE_WIDTH / 2 - 3;
+        y = -1;
+        rotationCount = 0;
+        landed = false;
         for (int i = 0; i < 4; i++) {
             for (int j = 0; j < 4; j++) {
                 for (int k = 0; k < 4; k++) {
-                    this->shape[i][j][k] = shape[i][j][k]; // 블럭 객체 정보 저장
+                    this->shape[i][j][k] = shape[i][j][k];
                 }
             }
         }
@@ -222,8 +233,22 @@ public:
     int getRotationCount() {
         return rotationCount;
     }
+    double getFallElapsedTime() {
+        return ((double)(clock() - fallStartTime) / CLOCKS_PER_SEC);
+    }
+    void setFallElapsedTime(clock_t fallStartTime) {
+        this->fallStartTime = fallStartTime;
+    }
+    bool hasLanded() {
+        return landed;
+    }
+    void setLanded(bool landed) {
+        this->landed = landed;
+    }
     void down() { // 블럭 한 칸 아래 이동
         y++;
+        fallStartTime = clock();
+
     }
     void left() { // 블럭 한 칸 왼쪽 이동
         x--;
@@ -232,7 +257,7 @@ public:
         x++;
     }
     void rotate() { // 블럭 회전
-        rotationCount = (rotationCount + 1) % 4; // 0 , 1, 2 , 3 으로 회전 표현
+        rotationCount = (rotationCount + 1) % 4;
     }
     void setX(int x) {
         this->x = x;
@@ -251,7 +276,6 @@ public:
     }
 };
 
-/*메인 메뉴 클래스*/
 class MainMenu {
 public:
     MainMenu() {
@@ -270,279 +294,245 @@ public:
     }
 };
 
-/*블럭, table 백업용 클래스*/
-class backup {
-public:
-    /*블럭 백업*/
-    static void updateBlock(Block* source, Block& backupBlock) {
-        backupBlock.setX(source->getX()); // 블럭의 x좌표 백업
-        backupBlock.setY(source->getY()); // 블럭의 y좌표 백업
-        backupBlock.setRotationCount(source->getRotationCount()); // 블럭의 회전 상태 변수 백업
-        for (int i = 0; i < 4; i++) {
-            for (int j = 0; j < 4; j++) {
-                for (int k = 0; k < 4; k++) {
-                    backupBlock.setShape(i, j, k, source->getShape(i, j, k)); // 블럭의 모양 백업
-                }
-            }
-        }
-    }
-    /*table 백업*/
-    static void updateTable(vector<vector<int> >& source, vector<vector<int> >& backupTable) {
-        backupTable.resize(source.size(), vector<int>(source.size())); // 기존 table의 크기만큼 2차원 벡터 크기 할당
-        copy(source.begin(), source.end(), backupTable.begin()); // 기존 table vector을 backupTable vector에 백업
-    }
-};
-/*테트리스 게임 테이블 클래스*/
 class GameTable {
 private:
-    int x; // 가로
-    int y; // 세로
-    Block* blockObject;
-    vector<vector<int> > table; // 블럭 정보 저장시 table[y][x]
+    Block block;
+    Block backupBlock;
+
+    vector<vector<int> > table;
+    vector<vector<int> > backupTable;
+
+    clock_t start, end;
+
 public:
-    GameTable(int x, int y) { //테트리스 판 뼈대 생성
-        blockObject = nullptr;
-        this->x = x;
-        this->y = y;
-        for (int i = 0; i < y; i++) {
+    GameTable() { //테트리스 판 뼈대 생성
+        for (int i = 0; i < TABLE_HEIGHT; i++) {
             vector<int> temp;
-            for (int j = 0; j < x; j++) {
+            for (int j = 0; j < TABLE_WIDTH; j++) {
                 temp.push_back(0);
             }
             table.push_back(temp);
         }
-        //가장 자리 뼈대 색칠
-        for (int i = 0; i < x; i++) {
-            table[0][i] = 1;
-            table[y - 1][i] = 1;
+        for (int i = 0; i < TABLE_WIDTH; i++) {
+            table[TABLE_HEIGHT - 1][i] = WALL;
         }
-        for (int i = 1; i < y - 1; i++) {
+        for (int i = 1; i < TABLE_HEIGHT - 1; i++) {
             table[i][0] = 1;
-            table[i][x - 1] = 1;
+            table[i][TABLE_WIDTH - 1] = WALL;
         }
-        /*맨 밑바닥 감지용 4*/
-        for (int i = 1; i < x - 1; i++) {
-            table[y - 1][i] = 4; // 맽 밑의 값을 4
+        for (int i = 1; i < TABLE_WIDTH - 1; i++) {
+            table[TABLE_HEIGHT - 1][i] = FLOOR;
         }
-        /*게임 종료 선*/
-        for (int i = 1; i < x - 1; i++) {
-            table[END_Y][i] = 5; // 게임 종료 선 값을 5
+        for (int i = 1; i < TABLE_WIDTH - 1; i++) {
+            table[END_Y][i] = END_LINE;
         }
-
+        createBlock(true);
+        drawGameTable();
     }
+
+    bool OOB(const int x, const int y) {
+        return (y < 0 || x < 0 || y >= TABLE_HEIGHT || x >= TABLE_WIDTH);
+    }
+    void restore() {
+        block = backupBlock;
+        table = backupTable;
+    }
+    void backup() {
+        backupBlock = block;
+        backupTable = table;
+    }
+
     /*게임판 그리는 함수*/
-    void DrawGameTable() {
-        for (int i = 0; i < y; i++) {
-            for (int j = 0; j < x; j++) {
-                if (table[i][j] >= 1 and table[i][j] <= 5) {
+    void drawGameTable()const {
+        gotoxy(0, 0); //system("cls") 안쓰고 (0, 0)으로 커서 이동 후
+        for (int i = 0; i < TABLE_HEIGHT; i++) {
+            for (int j = 0; j < TABLE_WIDTH; j++) {
+                if (table[i][j] == WALL) {
+                    cout << "[]";
+                } else if (table[i][j] == FALLING) {
+                    cout << "[]";
+                } else if (table[i][j] == FLOOR) {
+                    cout << "[]";
+                } else if (table[i][j] == LANDED) {
                     cout << "[]";
                 } else {
-                    cout << "  "; // 두 칸 띄우기
+                    cout << "  ";
                 }
             }
             cout << "\n";
         }
     }
     /*블럭 생성*/
-    void createBlock() {
+    bool createBlock(bool isFirstBlock) {
+        if (!isFirstBlock && !block.hasLanded()) {
+            return true;
+        }
+
         srand((unsigned int)time(NULL));
         int select = rand() % 5 + 1; // 1 ~ 5 블럭
-        if (select == 1) blockObject = new Block(block1); // 1번 블럭 생성
-        else if (select == 2)blockObject = new Block(block2); // 2번 블럭 생성
-        else if (select == 3)blockObject = new Block(block3); // 3번 블럭 생성
-        else if (select == 4)blockObject = new Block(block4); // 4번 블럭 생성
-        else if (select == 5)blockObject = new Block(block5); // 5번 블럭 생성
+        if (select == 1) block = Block(block1); // 1번 블럭 생성
+        else if (select == 2)block = Block(block2); // 2번 블럭 생성
+        else if (select == 3)block = Block(block3); // 3번 블럭 생성
+        else if (select == 4)block = Block(block4); // 4번 블럭 생성
+        else if (select == 5)block = Block(block5); // 5번 블럭 생성
 
         for (int i = 0; i < 4; i++) {
             for (int j = 0; j < 4; j++) {
-                int Y = j + blockObject->getY();
-                int X = i + blockObject->getX();
+                int x = j + block.getX();
+                int y = i + block.getY();
 
-                if (Y < 0 || X < 0 || Y >= TABLE_Y || X >= TABLE_X) continue; // array out of range 방지
-
-                table[Y][X] = blockObject->getShape(blockObject->getRotationCount(), i, j);
-                //블럭 객체를 테이블에 업데이트
+                if (OOB(x, y)) continue;
+                if (table[y][x] == LANDED) {
+                    return false;
+                }
+                table[y][x] = block.getShape(block.getRotationCount(), i, j);
             }
         }
+        block.setFallElapsedTime(clock());
     }
-    /*블럭 이동*/
-    void MoveBlock(int key) {
-        /*백업*/
-        Block backupBlock; // 백업용 Block 객체
-        vector<vector<int> > backupTable; // 백업용 table vector
-        backup::updateBlock(blockObject, backupBlock); // block 백업
-        backup::updateTable(table, backupTable); // table 백업
 
+    void eraseFallingBlockFromTable() {
         /*테이블에서 블럭 객체 지우기*/
         for (int i = 0; i < 4; i++) {
             for (int j = 0; j < 4; j++) {
-                int Y = j + blockObject->getY();
-                int X = i + blockObject->getX();
-                if (Y < 0 || X < 0 || Y >= TABLE_Y || X >= TABLE_X) continue; // array out of range 방지
-                if (table[Y][X] == 2) { // 만약 블럭이면
-                    table[Y][X] = 0; // 테이블에서 지운다
-                }
-            }
-        }
+                int x = j + block.getX();
+                int y = i + block.getY();
 
-        /*블럭 이동*/
-        if (key == DOWN) blockObject->down(); // 만약 인자로 들어온 key가 아랫 방향이면 블럭을 아래로 이동
-        else if (key == LEFT) blockObject->left();  // 만약 인자로 들어온 key가 왼쪽 방향이면 블럭을 왼쪽으로 이동
-        else if (key == RIGHT) blockObject->right(); // 만약 인자로 들어온 key가 오른쪽 방향이면 블럭을 오른쪽으로 이동
+                if (OOB(x, y)) continue;
 
-        /*이동한 블럭 상태를 테이블에 갱신 or 취소*/
-        for (int i = 0; i < 4; i++) {
-            for (int j = 0; j < 4; j++) {
-                int Y = j + blockObject->getY();
-                int X = i + blockObject->getX();
-
-                if (Y < 0 || X < 0 || Y >= TABLE_Y || X >= TABLE_X) continue; // array out of range 방지
-
-                int blockValue = blockObject->getShape(blockObject->getRotationCount(), i, j); //블럭 배열 값 얻기
-
-                if (blockValue != 2) continue; // 블럭이 아니면 무시 (블럭은 2로 이루어져있음)
-
-                if (table[Y][X] == 0) { // 빈공간이면 (갱신)
-                    table[Y][X] = blockValue; // 블럭을 이동시킴
-                } else if (table[Y][X] == 1) { // 블럭이 양 옆 벽면에 닿으면 (취소)
-                    copy(backupTable.begin(), backupTable.end(), table.begin()); // table 백업
-                    blockObject->setX(backupBlock.getX()); // 블럭 x 좌표 백업
-                    blockObject->setY(backupBlock.getY()); // 블럭 y 좌표 백업
-                    return; // 함수 종료
-                } else if (table[Y][X] == 3) { // 이미 쌓여진 블럭과 접촉하면
-                    copy(backupTable.begin(), backupTable.end(), table.begin()); // table 백업
-                    blockObject->setX(backupBlock.getX()); // 블럭 x 좌표 백업
-                    blockObject->setY(backupBlock.getY()); // 블럭 y 좌표 백업
-                    if (key == DOWN) { // 만약 아랫 방향일 경우에
-                        BuildBlock(); // 블럭을 쌓고
-                        createBlock(); // 새로운 블럭을 만듬
-                    }
-                    return; // 함수 종료
-                } else if (table[Y][X] == 4) { //만약에 맨 밑바닥에 접촉했으면
-                    copy(backupTable.begin(), backupTable.end(), table.begin()); // table 백업
-                    blockObject->setX(backupBlock.getX()); // 블럭 x 좌표 백업
-                    blockObject->setY(backupBlock.getY()); // 블럭 y 좌표 백업
-                    if (key == DOWN) { // 만약 아랫 방향일 경우에
-                        BuildBlock(); // 블럭을 쌓고
-                        createBlock(); // 새로운 블럭을 만듬
-                    }
-                    return; // 함수 종료
-                }
-
-            }
-        }
-
-    }
-    /*블럭 회전*/
-    void RotateBlock() {
-        /*백업*/
-        Block backupBlock; // 백업용 Block 객체
-        vector<vector<int> > backupTable; // 백업용 table vector
-        backup::updateBlock(blockObject, backupBlock); // block 백업
-        backup::updateTable(table, backupTable); // table 백업
-
-        /*테이블에서 블럭 객체 지우기*/
-        for (int i = 0; i < 4; i++) {
-            for (int j = 0; j < 4; j++) {
-                int Y = j + blockObject->getY();
-                int X = i + blockObject->getX();
-
-                if (Y < 0 || X < 0 || Y >= TABLE_Y || X >= TABLE_X) continue; // array out of range 방지
-
-                if (table[Y][X] == 2) { // 만약 블럭이면
-                    table[Y][X] = 0; // 테이블에서 지운다
-                }
-            }
-        }
-
-        /*블럭 회전*/
-        blockObject->rotate(); // 블럭을 회전
-
-        /*회전한 블럭 상태를 테이블에 갱신 및 취소*/
-        for (int i = 0; i < 4; i++) {
-            for (int j = 0; j < 4; j++) {
-                int Y = j + blockObject->getY();
-                int X = i + blockObject->getX();
-
-                if (Y < 0 || X < 0 || Y >= TABLE_Y || X >= TABLE_X) continue; // array out of range 방지
-
-                int blockValue = blockObject->getShape(blockObject->getRotationCount(), i, j); //블럭 배열 값 얻기
-
-                if (blockValue != 2) continue; // 블럭이 아니면 무시 (블럭은 2로 이루어져있음)
-
-                if (table[Y][X] == 0) { //빈공간인 경우에 이동한 블럭 정보를 테이블에 갱신
-                    table[Y][X] = blockObject->getShape(blockObject->getRotationCount(), i, j);
-                } else if (table[Y][X] == 1 || table[Y][X] == 3 || table[Y][X] == 4) { // 블럭&블럭, 블럭&벽 닿을 시 취소
-                    copy(backupTable.begin(), backupTable.end(), table.begin()); // table 백업
-                    blockObject->setRotationCount(backupBlock.getRotationCount()); // 회전하기 전 상태로 백업
-                    return; // 업데이트 취소
+                if (table[y][x] == FALLING) {
+                    table[y][x] = EMPTY;
                 }
             }
         }
     }
-    /*블럭을 table에 쌓기*/
-    void BuildBlock() {
+
+    bool canMoveOrRotateBlock(const int key) {
+        if (key == UP) {
+            block.rotate();
+        } else if (key == DOWN || key == AUTO_DROP) {
+            block.down();
+        } else if (key == LEFT) {
+            block.left();
+        } else if (key == RIGHT) {
+            block.right();
+        }
+
         for (int i = 0; i < 4; i++) {
             for (int j = 0; j < 4; j++) {
-                int Y = j + blockObject->getY();
-                int X = i + blockObject->getX();
+                int x = j + block.getX();
+                int y = i + block.getY();
 
-                if (Y < 0 || X < 0 || Y >= TABLE_Y || X >= TABLE_X) continue; // array out of range 방지
+                if (OOB(x, y)) continue;
 
-                int blockValue = blockObject->getShape(blockObject->getRotationCount(), i, j); //블럭 배열 값 얻기
-                if (blockValue != 2) continue; // 블럭이 아니면 무시 (블럭은 2로 이루어져있음)
-                table[Y][X] = 3;
+                int blockValue = block.getShape(block.getRotationCount(), i, j);
+
+                if (blockValue != FALLING) {
+                    continue;
+                }
+
+                if (table[y][x] != EMPTY) {
+                    return false;
+                }
+                table[y][x] = blockValue; // 블럭을 이동시킴
             }
         }
+        return true;
+    }
+
+    void operateBlock(const int key) {
+        if (key == UP || key == DOWN || key == LEFT || key == RIGHT) {
+            backup();
+            eraseFallingBlockFromTable();
+            if (!canMoveOrRotateBlock(key)) {
+                restore();
+            }
+            return;
+        }
+
+        if (key == AUTO_DROP && block.getFallElapsedTime() >= 1.5) {
+            backup();
+            eraseFallingBlockFromTable();
+            if (!canMoveOrRotateBlock(key)) {
+                restore();
+                landBlock();
+            }
+            return;
+        }
+
+        if (key == SPACE) {
+            hardDropBlock();
+        }
+    }
+
+    void landBlock() {
+        for (int i = 0; i < 4; i++) {
+            for (int j = 0; j < 4; j++) {
+                int x = j + block.getX();
+                int y = i + block.getY();
+
+                if (OOB(x, y)) continue;
+
+                int blockValue = block.getShape(block.getRotationCount(), i, j);
+                if (blockValue != FALLING) {
+                    continue;
+                }
+                table[y][x] = LANDED;
+            }
+        }
+        block.setLanded(true);
     }
     /*스페이스바 누를 시 바로 떨어짐*/
-    void HardDropBlock() {
+    void hardDropBlock() {
         /*테이블에서 블럭 객체 지우기*/
         for (int i = 0; i < 4; i++) {
             for (int j = 0; j < 4; j++) {
-                int Y = j + blockObject->getY();
-                int X = i + blockObject->getX();
+                int x = j + block.getX();
+                int y = i + block.getY();
 
-                if (Y < 0 || X < 0 || Y >= TABLE_Y || X >= TABLE_X) continue; // array out of range 방지
+                if (OOB(x, y)) continue;
 
-                if (table[Y][X] == 2) { // 만약 블럭이면
-                    table[Y][X] = 0; // 테이블에서 지운다
+                if (table[y][x] == FALLING) {
+                    table[y][x] = EMPTY;
                 }
             }
         }
         while (true) { //바닥이나 블럭을 만날때까지 반복
             for (int i = 0; i < 4; i++) {
                 for (int j = 0; j < 4; j++) {
-                    int Y = j + blockObject->getY();
-                    int X = i + blockObject->getX();
+                    int x = j + block.getX();
+                    int y = i + block.getY();
 
-                    if (Y < 0 || X < 0 || Y >= TABLE_Y || X >= TABLE_X) continue; // array out of range 방지
+                    if (OOB(x, y)) continue;
 
-                    int blockValue = blockObject->getShape(blockObject->getRotationCount(), i, j); //블럭 배열 값 얻기
+                    int blockValue = block.getShape(block.getRotationCount(), i, j);
 
-                    if (blockValue != 2) continue; // 블럭이 아니면 무시 (블럭은 2로 이루어져있음)
-
-                    if (table[Y][X] == 3 || table[Y][X] == 4) { // 블럭이나 벽을 만나면
-                        blockObject->up(); // 한 칸 위로 올리고
-                        BuildBlock(); // 블럭을 쌓고
-                        createBlock(); // 새로운 블럭을 만듬
-                        return; // 함수 종료
+                    if (blockValue != FALLING) {
+                        continue;
+                    }
+                    if (table[y][x] == LANDED || table[y][x] == FLOOR) {
+                        block.up(); // 한 칸 위로 올리고
+                        landBlock(); // 블럭을 쌓는다.
+                        deleteLinear();
+                        return;
                     }
                 }
             }
-            blockObject->down(); // 블럭을 한 칸 아래로 이동
+            block.down(); // 블럭을 한 칸 아래로 이동
         }
     }
     /*일직선 삭제*/
-    void DeleteLinear() {
-        for (int Y = END_Y + 1; Y < TABLE_Y - 1; Y++) {
+    void deleteLinear() {
+        for (int Y = END_Y + 1; Y < TABLE_HEIGHT - 1; Y++) {
             bool isLinear = true;
-            for (int X = 1; X < TABLE_X - 1; X++) {
-                if (table[Y][X] != 3) isLinear = false;
+            for (int X = 1; X < TABLE_WIDTH - 1; X++) {
+                if (table[Y][X] != LANDED) {
+                    isLinear = false;
+                }
             }
             if (isLinear) {
                 for (int i = Y; i > END_Y + 1; i--) {
-                    for (int j = 1; j < TABLE_X - 1; j++) {
+                    for (int j = 1; j < TABLE_WIDTH - 1; j++) {
                         table[i][j] = table[i - 1][j];
                     }
                 }
@@ -550,81 +540,54 @@ public:
         }
     }
     /*쌓은 블록이 게임 종료 선에 닿았는지 체크*/
-    bool isReachEnding() {
-        for (int X = 1; X < TABLE_X - 1; X++) {
-            if (table[END_Y][X] == 3) return true;
+    bool hasReachedEnd() {
+        for (int X = 1; X < TABLE_WIDTH - 1; X++) {
+            if (table[END_Y][X] == LANDED) {
+                return true;
+            }
         }
         return false;
     }
 };
 
-
-
-/*게임 시작 클래스*/
 class GamePlay {
 private:
     GameTable* gt;
 public:
+    int readKey() {
+        if (_kbhit()) {
+            int nSelect = _getch();
+            if (nSelect == 224) {
+                return _getch();
+
+            }
+            return nSelect;
+        }
+    }
     GamePlay() {
-        gt = new GameTable(TABLE_X, TABLE_Y); //게임 판 그리기 객체 생성
-        gt->createBlock(); // 초기 블럭 생성
-        gt->DrawGameTable(); // 게임판을 그린다.
-        int timer = 0;
-        clock_t start, end;
-        start = clock();
-        float time;
-        while (true) { // 방향키 입력 이벤트
-            int nSelect;
-            end = clock();
-            time = ((float)(end - start) / CLOCKS_PER_SEC);
-            if (time >= 1.5) { // 약 1.5초가 지나면
-                gt->MoveBlock(DOWN); //블럭을 한 칸 떨어뜨림
-                start = clock(); // 시간을 다시 잰다
+        gt = new GameTable();
+        while (true) {
+            gt->deleteLinear();
+            if (gt->hasReachedEnd()) {
+                return;
             }
-            if (_kbhit()) {
-                nSelect = _getch();
-                if (nSelect == 224) {
-                    nSelect = _getch();
-                    switch (nSelect) {
-                    case UP: // 화살표 위 눌렀을 때
-                        gt->RotateBlock(); // 블럭을 90도 회전 
-                        break;
-                    case DOWN: // 화살표 아래 눌렀을 때
-                        gt->MoveBlock(DOWN); // 블럭을 한 칸 아래로 이동
-                        break;
-                    case LEFT: // 화살표 왼쪽 눌렀을 떄
-                        gt->MoveBlock(LEFT); // 블럭을 한 칸 왼쪽으로 이동
-                        break;
-                    case RIGHT: // 화살표 오른쪽 눌렀을 때
-                        gt->MoveBlock(RIGHT); // 블럭을 한 칸 오른쪽으로 이동
-                        break;
-                    default:
-                        break;
-                    }
-                } else if (nSelect == SPACE) { // 스페이스바 눌렀을 때
-                    gt->HardDropBlock(); // 블럭을 바로 떨어뜨린다
-                }
-            }
-            if (gt->isReachEnding())return; // 쌓은 블럭이 종료 선에 닿으면 게임 종료
-            gt->DeleteLinear();
-            gotoxy(0, 0); //system("cls") 안쓰고 (0, 0)으로 커서 이동 후
-            gt->DrawGameTable(); // 다시 그리기
+            gt->operateBlock(AUTO_DROP);
+            gt->operateBlock(readKey());
+            gt->createBlock(false);
+            gt->drawGameTable();
         }
     }
     ~GamePlay() { // 게임 종료 이벤트
-        system("cls");
-        gotoxy(10, 10);
+        gotoxy(50, 10);
         cout << "Game Over!";
         delete gt;
     }
 };
 int main(void) {
-    CursorView(false); // 콘솔 화면 커서 제거 
+    CursorView(false); // 콘솔 화면 커서 제거
     system("title 테트리스 게임"); // 콘솔창 제목 설정
-    GameTable gt(TABLE_X, TABLE_Y);
     MainMenu(); // 메인 메뉴 그리기 생성자 호출
     GamePlay(); // 게임 플레이
     getchar();
-
     return 0;
 }
