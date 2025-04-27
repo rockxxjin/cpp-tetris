@@ -25,8 +25,17 @@ constexpr int DOWN = 80; // ↓
 constexpr int SPACE = 32; // space
 constexpr int AUTO_DROP = 9999;
 
+constexpr int GRAY = 8;
+constexpr int BLUE = 9;
+constexpr int GREEN = 10;
+constexpr int BLUE_GREEN = 11;
+constexpr int RED = 12;
+constexpr int PURPLE = 13;
+constexpr int YELLOW = 14;
+constexpr int WHITE = 15;
+
 /*커서 숨기기(0) or 보이기(1) */
-void CursorView(char show) {
+void cursorView(char show) {
     HANDLE hConsole;
     CONSOLE_CURSOR_INFO ConsoleCursor;
 
@@ -43,8 +52,13 @@ void gotoxy(int x, int y) {
     COORD pos = { x,y };
     SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), pos);
 }
+
+void setColor(int color) {
+    SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), color);
+}
+
 /*1번 블럭*/
-const int block1[4][4][4] = {
+constexpr int block1[4][4][4] = {
         {
                         {0, 0, 0, 0},
                         {0, 0, 0, 0},
@@ -74,7 +88,7 @@ const int block1[4][4][4] = {
 
 };
 /*2번 블럭*/
-const int block2[4][4][4] = {
+constexpr int block2[4][4][4] = {
         {
                         {0, 0, 0, 0},
                         {0, 2, 2, 0},
@@ -102,7 +116,7 @@ const int block2[4][4][4] = {
 
 };
 /*3번 블럭*/
-const int block3[4][4][4] = {
+constexpr int block3[4][4][4] = {
         {
                         {0, 2, 0, 0},
                         {0, 2, 0, 0},
@@ -133,7 +147,7 @@ const int block3[4][4][4] = {
 
 };
 /*4번 블럭*/
-const int block4[4][4][4] = {
+constexpr int block4[4][4][4] = {
         {
                         {0, 0, 0, 0},
                         {0, 2, 0, 0},
@@ -164,7 +178,7 @@ const int block4[4][4][4] = {
 
 };
 /*5번 블럭*/
-const int block5[4][4][4] = {
+constexpr int block5[4][4][4] = {
         {
                         {0, 0, 0, 0},
                         {0, 2, 2, 2},
@@ -204,11 +218,12 @@ private:
     int rotationCount; // shape[0][y][x], shape[1][y][x], shape[2][y][x], shaoe[3][y][x]로 4가지 상태 표현
     bool landed;
     clock_t fallStartTime;
+    int color;
 public:
     Block() {
 
     }
-    Block(const int shape[4][4][4]) {
+    Block(const int shape[4][4][4], int color) {
         x = TABLE_WIDTH / 2 - 3;
         y = -1;
         rotationCount = 0;
@@ -220,6 +235,7 @@ public:
                 }
             }
         }
+        this->color = color;
     }
     int getShape(int rotationCount, int y, int x) {
         return shape[rotationCount][y][x];
@@ -241,6 +257,9 @@ public:
     }
     bool hasLanded() {
         return landed;
+    }
+    int getColor() {
+        return color;
     }
     void setLanded(bool landed) {
         this->landed = landed;
@@ -306,32 +325,38 @@ private:
 
 public:
     GameTable() { //테트리스 판 뼈대 생성
-        for (int i = 0; i < TABLE_HEIGHT; i++) {
+        for (int tableY = 0; tableY < TABLE_HEIGHT; tableY++) {
             vector<int> temp;
-            for (int j = 0; j < TABLE_WIDTH; j++) {
+            for (int tableX = 0; tableX < TABLE_WIDTH; tableX++) {
                 temp.push_back(0);
             }
             table.push_back(temp);
         }
-        for (int i = 0; i < TABLE_WIDTH; i++) {
-            table[TABLE_HEIGHT - 1][i] = WALL;
+        for (int tableX = 0; tableX < TABLE_WIDTH; tableX++) {
+            table[TABLE_HEIGHT - 1][tableX] = WALL;
         }
-        for (int i = 1; i < TABLE_HEIGHT - 1; i++) {
-            table[i][0] = 1;
-            table[i][TABLE_WIDTH - 1] = WALL;
+        for (int tableY = 1; tableY < TABLE_HEIGHT - 1; tableY++) {
+            table[tableY][0] = 1;
+            table[tableY][TABLE_WIDTH - 1] = WALL;
         }
-        for (int i = 1; i < TABLE_WIDTH - 1; i++) {
-            table[TABLE_HEIGHT - 1][i] = FLOOR;
+        for (int tableX = 1; tableX < TABLE_WIDTH - 1; tableX++) {
+            table[TABLE_HEIGHT - 1][tableX] = FLOOR;
         }
-        for (int i = 1; i < TABLE_WIDTH - 1; i++) {
-            table[END_Y][i] = END_LINE;
+        for (int tableX = 1; tableX < TABLE_WIDTH - 1; tableX++) {
+            table[END_Y][tableX] = END_LINE;
         }
         createBlock(true);
         drawGameTable();
     }
 
-    bool OOB(const int x, const int y) {
-        return (y < 0 || x < 0 || y >= TABLE_HEIGHT || x >= TABLE_WIDTH);
+    bool isValidPosition(const int tableY, const int tableX) {
+        return (tableY < 0 || tableX < 0 || tableY >= TABLE_HEIGHT || tableX >= TABLE_WIDTH);
+    }
+    bool isColor(const int y, const int x) {
+        return (9 <= table[y][x] and table[y][x] <= 14);
+    }
+    bool isFloor(const int y, const int x) {
+        return table[y][x] == FLOOR;
     }
     void restore() {
         block = backupBlock;
@@ -342,19 +367,24 @@ public:
         backupTable = table;
     }
 
+
     /*게임판 그리는 함수*/
-    void drawGameTable()const {
+    void drawGameTable() {
         gotoxy(0, 0); //system("cls") 안쓰고 (0, 0)으로 커서 이동 후
-        for (int i = 0; i < TABLE_HEIGHT; i++) {
-            for (int j = 0; j < TABLE_WIDTH; j++) {
-                if (table[i][j] == WALL) {
-                    cout << "[]";
-                } else if (table[i][j] == FALLING) {
-                    cout << "[]";
-                } else if (table[i][j] == FLOOR) {
-                    cout << "[]";
-                } else if (table[i][j] == LANDED) {
-                    cout << "[]";
+        for (int y = 0; y < TABLE_HEIGHT; y++) {
+            for (int x = 0; x < TABLE_WIDTH; x++) {
+                if (table[y][x] == WALL) {
+                    setColor(GRAY);
+                    cout << "▧ ";
+                } else if (table[y][x] == FALLING) {
+                    setColor(block.getColor());
+                    cout << "▧ ";
+                } else if (table[y][x] == FLOOR) {
+                    setColor(GRAY);
+                    cout << "▧ ";
+                } else if (isColor(y, x)) {
+                    setColor(table[y][x]);
+                    cout << "▧ ";
                 } else {
                     cout << "  ";
                 }
@@ -370,22 +400,22 @@ public:
 
         srand((unsigned int)time(NULL));
         int select = rand() % 5 + 1; // 1 ~ 5 블럭
-        if (select == 1) block = Block(block1); // 1번 블럭 생성
-        else if (select == 2)block = Block(block2); // 2번 블럭 생성
-        else if (select == 3)block = Block(block3); // 3번 블럭 생성
-        else if (select == 4)block = Block(block4); // 4번 블럭 생성
-        else if (select == 5)block = Block(block5); // 5번 블럭 생성
+        if (select == 1) block = Block(block1, BLUE_GREEN); // 1번 블럭 생성
+        else if (select == 2)block = Block(block2, YELLOW); // 2번 블럭 생성
+        else if (select == 3)block = Block(block3, BLUE); // 3번 블럭 생성
+        else if (select == 4)block = Block(block4, GREEN); // 4번 블럭 생성
+        else if (select == 5)block = Block(block5, RED); // 5번 블럭 생성
 
-        for (int i = 0; i < 4; i++) {
-            for (int j = 0; j < 4; j++) {
-                int x = j + block.getX();
-                int y = i + block.getY();
+        for (int blockY = 0; blockY < 4; blockY++) {
+            for (int blockX = 0; blockX < 4; blockX++) {
+                int tableY = blockY + block.getY();
+                int tableX = blockX + block.getX();
 
-                if (OOB(x, y)) continue;
-                if (table[y][x] == LANDED) {
+                if (isValidPosition(tableY, tableX)) continue;
+                if (isColor(tableY, tableX)) {
                     return false;
                 }
-                table[y][x] = block.getShape(block.getRotationCount(), i, j);
+                table[tableY][tableX] = block.getShape(block.getRotationCount(), blockY, blockX);
             }
         }
         block.setFallElapsedTime(clock());
@@ -393,15 +423,15 @@ public:
 
     void eraseFallingBlockFromTable() {
         /*테이블에서 블럭 객체 지우기*/
-        for (int i = 0; i < 4; i++) {
-            for (int j = 0; j < 4; j++) {
-                int x = j + block.getX();
-                int y = i + block.getY();
+        for (int blockY = 0; blockY < 4; blockY++) {
+            for (int blockX = 0; blockX < 4; blockX++) {
+                int tableY = blockY + block.getY();
+                int tableX = blockX + block.getX();
 
-                if (OOB(x, y)) continue;
+                if (isValidPosition(tableY, tableX)) continue;
 
-                if (table[y][x] == FALLING) {
-                    table[y][x] = EMPTY;
+                if (table[tableY][tableX] == FALLING) {
+                    table[tableY][tableX] = EMPTY;
                 }
             }
         }
@@ -423,7 +453,7 @@ public:
                 int x = j + block.getX();
                 int y = i + block.getY();
 
-                if (OOB(x, y)) continue;
+                if (isValidPosition(y, x)) continue;
 
                 int blockValue = block.getShape(block.getRotationCount(), i, j);
 
@@ -466,18 +496,18 @@ public:
     }
 
     void landBlock() {
-        for (int i = 0; i < 4; i++) {
-            for (int j = 0; j < 4; j++) {
-                int x = j + block.getX();
-                int y = i + block.getY();
+        for (int blockY = 0; blockY < 4; blockY++) {
+            for (int blockX = 0; blockX < 4; blockX++) {
+                int tableY = blockY + block.getY();
+                int tableX = blockX + block.getX();
 
-                if (OOB(x, y)) continue;
+                if (isValidPosition(tableY, tableX)) continue;
 
-                int blockValue = block.getShape(block.getRotationCount(), i, j);
+                int blockValue = block.getShape(block.getRotationCount(), blockY, blockX);
                 if (blockValue != FALLING) {
                     continue;
                 }
-                table[y][x] = LANDED;
+                table[tableY][tableX] = block.getColor();
             }
         }
         block.setLanded(true);
@@ -485,32 +515,32 @@ public:
     /*스페이스바 누를 시 바로 떨어짐*/
     void hardDropBlock() {
         /*테이블에서 블럭 객체 지우기*/
-        for (int i = 0; i < 4; i++) {
-            for (int j = 0; j < 4; j++) {
-                int x = j + block.getX();
-                int y = i + block.getY();
+        for (int blockY = 0; blockY < 4; blockY++) {
+            for (int blockX = 0; blockX < 4; blockX++) {
+                int tableY = blockY + block.getY();
+                int tableX = blockX + block.getX();
 
-                if (OOB(x, y)) continue;
+                if (isValidPosition(tableY, tableX)) continue;
 
-                if (table[y][x] == FALLING) {
-                    table[y][x] = EMPTY;
+                if (table[tableY][tableX] == FALLING) {
+                    table[tableY][tableX] = EMPTY;
                 }
             }
         }
         while (true) { //바닥이나 블럭을 만날때까지 반복
-            for (int i = 0; i < 4; i++) {
-                for (int j = 0; j < 4; j++) {
-                    int x = j + block.getX();
-                    int y = i + block.getY();
+            for (int blockY = 0; blockY < 4; blockY++) {
+                for (int blockX = 0; blockX < 4; blockX++) {
+                    int tableY = blockY + block.getY();
+                    int tableX = blockX + block.getX();
 
-                    if (OOB(x, y)) continue;
+                    if (isValidPosition(tableY, tableX)) continue;
 
-                    int blockValue = block.getShape(block.getRotationCount(), i, j);
+                    int blockValue = block.getShape(block.getRotationCount(), blockY, blockX);
 
                     if (blockValue != FALLING) {
                         continue;
                     }
-                    if (table[y][x] == LANDED || table[y][x] == FLOOR) {
+                    if (isColor(tableY, tableX) || isFloor(tableY, tableX)) {
                         block.up(); // 한 칸 위로 올리고
                         landBlock(); // 블럭을 쌓는다.
                         deleteLinear();
@@ -523,17 +553,18 @@ public:
     }
     /*일직선 삭제*/
     void deleteLinear() {
-        for (int Y = END_Y + 1; Y < TABLE_HEIGHT - 1; Y++) {
+        for (int tableY = END_Y + 1; tableY < TABLE_HEIGHT - 1; tableY++) {
             bool isLinear = true;
-            for (int X = 1; X < TABLE_WIDTH - 1; X++) {
-                if (table[Y][X] != LANDED) {
+            for (int tableX = 1; tableX < TABLE_WIDTH - 1; tableX++) {
+                if (!isColor(tableY, tableX)) {
                     isLinear = false;
+                    break;
                 }
             }
             if (isLinear) {
-                for (int i = Y; i > END_Y + 1; i--) {
-                    for (int j = 1; j < TABLE_WIDTH - 1; j++) {
-                        table[i][j] = table[i - 1][j];
+                for (int shiftY = tableY; shiftY > END_Y + 1; shiftY--) {
+                    for (int tableX = 1; tableX < TABLE_WIDTH - 1; tableX++) {
+                        table[shiftY][tableX] = table[shiftY - 1][tableX];
                     }
                 }
             }
@@ -541,8 +572,8 @@ public:
     }
     /*쌓은 블록이 게임 종료 선에 닿았는지 체크*/
     bool hasReachedEnd() {
-        for (int X = 1; X < TABLE_WIDTH - 1; X++) {
-            if (table[END_Y][X] == LANDED) {
+        for (int tableX = 1; tableX < TABLE_WIDTH - 1; tableX++) {
+            if (isColor(END_Y, tableX)) {
                 return true;
             }
         }
@@ -555,6 +586,7 @@ private:
     GameTable* gt;
 public:
     int readKey() {
+
         if (_kbhit()) {
             int nSelect = _getch();
             if (nSelect == 224) {
@@ -584,8 +616,8 @@ public:
     }
 };
 int main(void) {
-    CursorView(false); // 콘솔 화면 커서 제거
-    system("title 테트리스 게임"); // 콘솔창 제목 설정
+    cursorView(false); // 콘솔 화면 커서 제거
+    SetConsoleTitle(TEXT("테트리스 게임"));
     MainMenu(); // 메인 메뉴 그리기 생성자 호출
     GamePlay(); // 게임 플레이
     getchar();
