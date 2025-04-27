@@ -17,6 +17,7 @@ constexpr int FALLING = 2;
 constexpr int LANDED = 3;
 constexpr int FLOOR = 4;
 constexpr int END_LINE = 5;
+constexpr int GHOST_PIECE = 6;
 
 constexpr int LEFT = 75; // ←
 constexpr int RIGHT = 77;  // →
@@ -24,6 +25,7 @@ constexpr int UP = 72; // ↑
 constexpr int DOWN = 80; // ↓
 constexpr int SPACE = 32; // space
 constexpr int AUTO_DROP = 9999;
+constexpr int GHOST_PIECE_DROP = 10000;
 
 constexpr int GRAY = 8;
 constexpr int BLUE = 9;
@@ -362,6 +364,9 @@ public:
         block = backupBlock;
         table = backupTable;
     }
+    void restoreBlock() {
+        block = backupBlock;
+    }
     void backup() {
         backupBlock = block;
         backupTable = table;
@@ -385,6 +390,9 @@ public:
                 } else if (isColor(y, x)) {
                     setColor(table[y][x]);
                     cout << "▧ ";
+                } else if (table[y][x] == GHOST_PIECE) {
+                    setColor(block.getColor());
+                    cout << "□ ";
                 } else {
                     cout << "  ";
                 }
@@ -421,16 +429,10 @@ public:
         block.setFallElapsedTime(clock());
     }
 
-    void eraseFallingBlockFromTable() {
-        /*테이블에서 블럭 객체 지우기*/
-        for (int blockY = 0; blockY < 4; blockY++) {
-            for (int blockX = 0; blockX < 4; blockX++) {
-                int tableY = blockY + block.getY();
-                int tableX = blockX + block.getX();
-
-                if (isInvalidPosition(tableY, tableX)) continue;
-
-                if (table[tableY][tableX] == FALLING) {
+    void clearCellsOfType(int cellType) {
+        for (int tableY = 0; tableY < TABLE_HEIGHT; tableY++) {
+            for (int tableX = 0; tableX < TABLE_WIDTH; tableX++) {
+                if (table[tableY][tableX] == cellType) {
                     table[tableY][tableX] = EMPTY;
                 }
             }
@@ -461,7 +463,7 @@ public:
                     continue;
                 }
 
-                if (table[y][x] != EMPTY) {
+                if (table[y][x] != EMPTY && table[y][x] != GHOST_PIECE) {
                     return false;
                 }
                 table[y][x] = blockValue; // 블럭을 이동시킴
@@ -473,7 +475,7 @@ public:
     void operateBlock(const int key) {
         if (key == UP || key == DOWN || key == LEFT || key == RIGHT) {
             backup();
-            eraseFallingBlockFromTable();
+            clearCellsOfType(FALLING);
             if (!canMoveOrRotateBlock(key)) {
                 restore();
             }
@@ -482,7 +484,7 @@ public:
 
         if (key == AUTO_DROP && block.getFallElapsedTime() >= 1.5) {
             backup();
-            eraseFallingBlockFromTable();
+            clearCellsOfType(FALLING);
             if (!canMoveOrRotateBlock(key)) {
                 restore();
                 landBlock();
@@ -492,6 +494,11 @@ public:
 
         if (key == SPACE) {
             hardDropBlock();
+            return;
+        }
+
+        if (key == GHOST_PIECE_DROP) {
+            hardDropGhostPiece();
         }
     }
 
@@ -512,9 +519,8 @@ public:
         }
         block.setLanded(true);
     }
-    /*스페이스바 누를 시 바로 떨어짐*/
-    void hardDropBlock() {
-        /*테이블에서 블럭 객체 지우기*/
+
+    void landGhostPiece() {
         for (int blockY = 0; blockY < 4; blockY++) {
             for (int blockX = 0; blockX < 4; blockX++) {
                 int tableY = blockY + block.getY();
@@ -522,12 +528,19 @@ public:
 
                 if (isInvalidPosition(tableY, tableX)) continue;
 
-                if (table[tableY][tableX] == FALLING) {
-                    table[tableY][tableX] = EMPTY;
+                int blockValue = block.getShape(block.getRotationCount(), blockY, blockX);
+                if (blockValue != FALLING) {
+                    continue;
+                }
+                if (table[tableY][tableX] == EMPTY) {
+                    table[tableY][tableX] = GHOST_PIECE;
                 }
             }
         }
-        while (true) { //바닥이나 블럭을 만날때까지 반복
+    }
+
+    void dropBlockUntilCollision() {
+        while (true) {
             for (int blockY = 0; blockY < 4; blockY++) {
                 for (int blockX = 0; blockX < 4; blockX++) {
                     int tableY = blockY + block.getY();
@@ -536,21 +549,34 @@ public:
                     if (isInvalidPosition(tableY, tableX)) continue;
 
                     int blockValue = block.getShape(block.getRotationCount(), blockY, blockX);
-
                     if (blockValue != FALLING) {
                         continue;
                     }
                     if (isColor(tableY, tableX) || isFloor(tableY, tableX)) {
-                        block.up(); // 한 칸 위로 올리고
-                        landBlock(); // 블럭을 쌓는다.
-                        deleteLinear();
                         return;
                     }
                 }
             }
-            block.down(); // 블럭을 한 칸 아래로 이동
+            block.down();
         }
     }
+
+    void hardDropBlock() {
+        clearCellsOfType(FALLING);
+        dropBlockUntilCollision();
+        block.up();
+        landBlock();
+    }
+
+    void hardDropGhostPiece() {
+        backup();
+        clearCellsOfType(GHOST_PIECE);
+        dropBlockUntilCollision();
+        block.up();
+        landGhostPiece();
+        restoreBlock();
+    }
+    
     /*일직선 삭제*/
     void deleteLinear() {
         for (int tableY = END_Y + 1; tableY < TABLE_HEIGHT - 1; tableY++) {
@@ -603,6 +629,7 @@ public:
             if (gt->hasReachedEnd()) {
                 return;
             }
+            gt->operateBlock(GHOST_PIECE_DROP);
             gt->operateBlock(AUTO_DROP);
             gt->operateBlock(readKey());
             gt->createBlock(false);
