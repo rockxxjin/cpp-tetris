@@ -349,7 +349,7 @@ public:
         drawGameTable();
     }
 
-    bool isValidPosition(const int tableY, const int tableX) {
+    bool isInvalidPosition(const int tableY, const int tableX) {
         return (tableY < 0 || tableX < 0 || tableY >= TABLE_HEIGHT || tableX >= TABLE_WIDTH);
     }
     bool isColor(const int y, const int x) {
@@ -411,7 +411,7 @@ public:
                 int tableY = blockY + block.getY();
                 int tableX = blockX + block.getX();
 
-                if (isValidPosition(tableY, tableX)) continue;
+                if (isInvalidPosition(tableY, tableX)) continue;
                 if (isColor(tableY, tableX)) {
                     return false;
                 }
@@ -428,7 +428,7 @@ public:
                 int tableY = blockY + block.getY();
                 int tableX = blockX + block.getX();
 
-                if (isValidPosition(tableY, tableX)) continue;
+                if (isInvalidPosition(tableY, tableX)) continue;
 
                 if (table[tableY][tableX] == FALLING) {
                     table[tableY][tableX] = EMPTY;
@@ -453,7 +453,7 @@ public:
                 int x = j + block.getX();
                 int y = i + block.getY();
 
-                if (isValidPosition(y, x)) continue;
+                if (isInvalidPosition(y, x)) continue;
 
                 int blockValue = block.getShape(block.getRotationCount(), i, j);
 
@@ -501,7 +501,7 @@ public:
                 int tableY = blockY + block.getY();
                 int tableX = blockX + block.getX();
 
-                if (isValidPosition(tableY, tableX)) continue;
+                if (isInvalidPosition(tableY, tableX)) continue;
 
                 int blockValue = block.getShape(block.getRotationCount(), blockY, blockX);
                 if (blockValue != FALLING) {
@@ -520,7 +520,7 @@ public:
                 int tableY = blockY + block.getY();
                 int tableX = blockX + block.getX();
 
-                if (isValidPosition(tableY, tableX)) continue;
+                if (isInvalidPosition(tableY, tableX)) continue;
 
                 if (table[tableY][tableX] == FALLING) {
                     table[tableY][tableX] = EMPTY;
@@ -533,7 +533,7 @@ public:
                     int tableY = blockY + block.getY();
                     int tableX = blockX + block.getX();
 
-                    if (isValidPosition(tableY, tableX)) continue;
+                    if (isInvalidPosition(tableY, tableX)) continue;
 
                     int blockValue = block.getShape(block.getRotationCount(), blockY, blockX);
 
