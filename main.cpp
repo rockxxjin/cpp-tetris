@@ -576,7 +576,7 @@ public:
         landGhostPiece();
         restoreBlock();
     }
-    
+
     /*일직선 삭제*/
     void deleteLinear() {
         for (int tableY = END_Y + 1; tableY < TABLE_HEIGHT - 1; tableY++) {
@@ -590,7 +590,9 @@ public:
             if (isLinear) {
                 for (int shiftY = tableY; shiftY > END_Y + 1; shiftY--) {
                     for (int tableX = 1; tableX < TABLE_WIDTH - 1; tableX++) {
-                        table[shiftY][tableX] = table[shiftY - 1][tableX];
+                        if (table[shiftY - 1][tableX] != FALLING) {
+                            table[shiftY][tableX] = table[shiftY - 1][tableX];
+                        }
                     }
                 }
             }
