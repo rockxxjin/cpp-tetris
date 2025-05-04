@@ -1,231 +1,243 @@
+#include <SFML/Graphics.hpp>
 #include <iostream>
+#include <unordered_map>
 #include <vector>
-#include <conio.h>
-#include <windows.h>
-#include <cstdlib>
-#include <ctime>
-#include <algorithm>
 using namespace std;
 
-constexpr int END_Y = 0;    // 게임 종료 선
-constexpr int TABLE_WIDTH = 12; //테트리스판 가로 크기
-constexpr int TABLE_HEIGHT = 22; //테트리스판 세로 크기
+constexpr int END_Y = 0;         // 게임 종료 선
+constexpr int TABLE_WIDTH = 12;  // 테트리스판 가로 크기
+constexpr int TABLE_HEIGHT = 22; // 테트리스판 세로 크기
 
 constexpr int EMPTY = 0;
 constexpr int WALL = 1;
 constexpr int FALLING = 2;
 constexpr int LANDED = 3;
-constexpr int FLOOR = 4;
-constexpr int END_LINE = 5;
-constexpr int GHOST_PIECE = 6;
+constexpr int END_LINE = 4;
+constexpr int GHOST_PIECE = 5;
 
-constexpr int LEFT = 75; // ←
-constexpr int RIGHT = 77;  // →
-constexpr int UP = 72; // ↑
-constexpr int DOWN = 80; // ↓
-constexpr int SPACE = 32; // space
 constexpr int AUTO_DROP = 9999;
 constexpr int GHOST_PIECE_DROP = 10000;
 
-constexpr int GRAY = 8;
-constexpr int BLUE = 9;
-constexpr int GREEN = 10;
-constexpr int BLUE_GREEN = 11;
-constexpr int RED = 12;
-constexpr int PURPLE = 13;
-constexpr int YELLOW = 14;
-constexpr int WHITE = 15;
+constexpr int MINO_I = 5000;
+constexpr int MINO_O = 5001;
+constexpr int MINO_Z = 5002;
+constexpr int MINO_S = 5003;
+constexpr int MINO_J = 5004;
+constexpr int MINO_L = 5005;
+constexpr int MINO_T = 5006;
 
-/*커서 숨기기(0) or 보이기(1) */
-void cursorView(char show) {
-    HANDLE hConsole;
-    CONSOLE_CURSOR_INFO ConsoleCursor;
-
-    hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-
-    ConsoleCursor.bVisible = show;
-    ConsoleCursor.dwSize = 1;
-
-    SetConsoleCursorInfo(hConsole, &ConsoleCursor);
-}
-
-/*콘솔 커서 위치 이동*/
-void gotoxy(int x, int y) {
-    COORD pos = { x,y };
-    SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), pos);
-}
-
-void setColor(int color) {
-    SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), color);
-}
-
-/*1번 블럭*/
-constexpr int block1[4][4][4] = {
-        {
-                        {0, 0, 0, 0},
-                        {0, 0, 0, 0},
-                        {2, 2, 2, 2},
-                        {0, 0, 0, 0}
-        },
-        {
-                        {0, 0, 2, 0},
-                        {0, 0, 2, 0},
-                        {0, 0, 2, 0},
-                        {0, 0, 2, 0}
-
-        },
-        {
-                        {0, 0, 0, 0},
-                        {0, 0, 0, 0},
-                        {2, 2, 2, 2},
-                        {0, 0, 0, 0}
-
-        },
-        {
-                        {0, 0, 2, 0},
-                        {0, 0, 2, 0},
-                        {0, 0, 2, 0},
-                        {0, 0, 2, 0}
-        },
-
-};
-/*2번 블럭*/
-constexpr int block2[4][4][4] = {
-        {
-                        {0, 0, 0, 0},
-                        {0, 2, 2, 0},
-                        {0, 2, 2, 0},
-                        {0, 0, 0, 0}
-        },
-        {
-                        {0, 0, 0, 0},
-                        {0, 2, 2, 0},
-                        {0, 2, 2, 0},
-                        {0, 0, 0, 0}
-        },
-        {
-                        {0, 0, 0, 0},
-                        {0, 2, 2, 0},
-                        {0, 2, 2, 0},
-                        {0, 0, 0, 0}
-        },
-        {
-                        {0, 0, 0, 0},
-                        {0, 2, 2, 0},
-                        {0, 2, 2, 0},
-                        {0, 0, 0, 0}
-        },
-
-};
-/*3번 블럭*/
-constexpr int block3[4][4][4] = {
-        {
-                        {0, 2, 0, 0},
-                        {0, 2, 0, 0},
-                        {0, 2, 2, 0},
-                        {0, 0, 0, 0}
-        },
-        {
-                        {0, 0, 0, 0},
-                        {0, 2, 2, 2},
-                        {0, 2, 0, 0},
-                        {0, 0, 0, 0}
-
-        },
-        {
-                        {0, 2, 2, 0},
-                        {0, 0, 2, 0},
-                        {0, 0, 2, 0},
-                        {0, 0, 0, 0}
-
-        },
-        {
-                        {0, 0, 0, 0},
-                        {0, 0, 2, 0},
-                        {2, 2, 2, 0},
-                        {0, 0, 0, 0}
-
-        },
-
-};
-/*4번 블럭*/
-constexpr int block4[4][4][4] = {
-        {
-                        {0, 0, 0, 0},
-                        {0, 2, 0, 0},
-                        {0, 2, 2, 0},
-                        {0, 0, 2, 0}
-        },
-        {
-                        {0, 0, 0, 0},
-                        {0, 2, 2, 0},
-                        {2, 2, 0, 0},
-                        {0, 0, 0, 0}
-
-        },
-        {
-                        {0, 0, 0, 0},
-                        {0, 2, 0, 0},
-                        {0, 2, 2, 0},
-                        {0, 0, 2, 0}
-
-        },
-        {
-                        {0, 0, 0, 0},
-                        {0, 2, 2, 0},
-                        {2, 2, 0, 0},
-                        {0, 0, 0, 0}
-
-        },
-
-};
-/*5번 블럭*/
-constexpr int block5[4][4][4] = {
-        {
-                        {0, 0, 0, 0},
-                        {0, 2, 2, 2},
-                        {0, 0, 2, 0},
-                        {0, 0, 0, 0}
-        },
-        {
-                        {0, 0, 2, 0},
-                        {0, 2, 2, 0},
-                        {0, 0, 2, 0},
-                        {0, 0, 0, 0}
-
-        },
-        {
-                        {0, 0, 2, 0},
-                        {0, 2, 2, 2},
-                        {0, 0, 0, 0},
-                        {0, 0, 0, 0}
-
-        },
-        {
-                        {0, 0, 2, 0},
-                        {0, 0, 2, 2},
-                        {0, 0, 2, 0},
-                        {0, 0, 0, 0}
-
-        },
-
+// clang-format off
+// I 블록
+constexpr int blockI[4][4][4] = {
+    {
+        {0, 0, 0, 0},
+        {2, 2, 2, 2},
+        {0, 0, 0, 0},
+        {0, 0, 0, 0}
+    },
+    {
+        {0, 0, 2, 0},
+        {0, 0, 2, 0},
+        {0, 0, 2, 0},
+        {0, 0, 2, 0}
+    },
+    {
+        {0, 0, 0, 0},
+        {2, 2, 2, 2},
+        {0, 0, 0, 0},
+        {0, 0, 0, 0}
+    },
+    {
+        {0, 0, 2, 0},
+        {0, 0, 2, 0},
+        {0, 0, 2, 0},
+        {0, 0, 2, 0}
+    },
 };
 
-/*블럭 부모 클래스*/
+// O 블록
+constexpr int blockO[4][4][4] = {
+    {
+        {0, 0, 0, 0},
+        {0, 2, 2, 0},
+        {0, 2, 2, 0},
+        {0, 0, 0, 0}
+    },
+    {
+        {0, 0, 0, 0},
+        {0, 2, 2, 0},
+        {0, 2, 2, 0},
+        {0, 0, 0, 0}
+    },
+    {
+        {0, 0, 0, 0},
+        {0, 2, 2, 0},
+        {0, 2, 2, 0},
+        {0, 0, 0, 0}
+    },
+    {
+        {0, 0, 0, 0},
+        {0, 2, 2, 0},
+        {0, 2, 2, 0},
+        {0, 0, 0, 0}
+    },
+};
+
+// S 블록
+constexpr int blockS[4][4][4] = {
+    {
+        {0, 0, 0, 0},
+        {0, 0, 2, 2},
+        {0, 2, 2, 0},
+        {0, 0, 0, 0}
+    },
+    {
+        {0, 0, 2, 0},
+        {0, 0, 2, 2},
+        {0, 0, 0, 2},
+        {0, 0, 0, 0}
+    },
+    {
+        {0, 0, 0, 0},
+        {0, 0, 2, 2},
+        {0, 2, 2, 0},
+        {0, 0, 0, 0}
+    },
+    {
+        {0, 0, 2, 0},
+        {0, 0, 2, 2},
+        {0, 0, 0, 2},
+        {0, 0, 0, 0}
+    },
+};
+
+// Z 블록
+constexpr int blockZ[4][4][4] = {
+    {
+        {0, 0, 0, 0},
+        {0, 2, 2, 0},
+        {0, 0, 2, 2},
+        {0, 0, 0, 0}
+    },
+    {
+        {0, 0, 0, 2},
+        {0, 0, 2, 2},
+        {0, 0, 2, 0},
+        {0, 0, 0, 0}
+    },
+    {
+        {0, 0, 0, 0},
+        {0, 2, 2, 0},
+        {0, 0, 2, 2},
+        {0, 0, 0, 0}
+    },
+    {
+        {0, 0, 0, 2},
+        {0, 0, 2, 2},
+        {0, 0, 2, 0},
+        {0, 0, 0, 0}
+    },
+};
+
+// J 블록
+constexpr int blockJ[4][4][4] = {
+    {
+        {0, 0, 0, 0},
+        {0, 2, 0, 0},
+        {0, 2, 2, 2},
+        {0, 0, 0, 0}
+    },
+    {
+        {0, 0, 2, 2},
+        {0, 0, 2, 0},
+        {0, 0, 2, 0},
+        {0, 0, 0, 0}
+    },
+    {
+        {0, 0, 0, 0},
+        {0, 2, 2, 2},
+        {0, 0, 0, 2},
+        {0, 0, 0, 0}
+    },
+    {
+        {0, 0, 2, 0},
+        {0, 0, 2, 0},
+        {0, 2, 2, 0},
+        {0, 0, 0, 0}
+    },
+};
+
+// L 블록
+constexpr int blockL[4][4][4] = {
+    {
+        {0, 0, 0, 0},
+        {0, 0, 0, 2},
+        {0, 2, 2, 2},
+        {0, 0, 0, 0}
+    },
+    {
+        {0, 0, 2, 0},
+        {0, 0, 2, 0},
+        {0, 0, 2, 2},
+        {0, 0, 0, 0}
+    },
+    {
+        {0, 0, 0, 0},
+        {0, 2, 2, 2},
+        {0, 2, 0, 0},
+        {0, 0, 0, 0}
+    },
+    {
+        {0, 2, 2, 0},
+        {0, 0, 2, 0},
+        {0, 0, 2, 0},
+        {0, 0, 0, 0}
+    },
+};
+
+// T 블록
+constexpr int blockT[4][4][4] = {
+    {
+        {0, 0, 0, 0},
+        {0, 2, 2, 2},
+        {0, 0, 2, 0},
+        {0, 0, 0, 0}
+    },
+    {
+        {0, 0, 2, 0},
+        {0, 2, 2, 0},
+        {0, 0, 2, 0},
+        {0, 0, 0, 0}
+    },
+    {
+        {0, 0, 2, 0},
+        {0, 2, 2, 2},
+        {0, 0, 0, 0},
+        {0, 0, 0, 0}
+    },
+    {
+        {0, 0, 2, 0},
+        {0, 0, 2, 2},
+        {0, 0, 2, 0},
+        {0, 0, 0, 0}
+    },
+};
+
+// clang-format on
+
 class Block {
-private:
+  private:
     int shape[4][4][4]; // shape[rotate][y][x]
-    int x; // x좌표
-    int y; // y좌표
-    int rotationCount; // shape[0][y][x], shape[1][y][x], shape[2][y][x], shaoe[3][y][x]로 4가지 상태 표현
+    int x;              // x좌표
+    int y;              // y좌표
+    int rotationCount;  // shape[0][y][x], shape[1][y][x], shape[2][y][x], shaoe[3][y][x]로 4가지 회전 상태 표현
     bool landed;
     clock_t fallStartTime;
-    int color;
-public:
-    Block() {
+    int minoType;
 
-    }
-    Block(const int shape[4][4][4], int color) {
+  public:
+    Block() {}
+    Block(const int shape[4][4][4], int minoType) {
         x = TABLE_WIDTH / 2 - 3;
         y = -1;
         rotationCount = 0;
@@ -237,39 +249,26 @@ public:
                 }
             }
         }
-        this->color = color;
+        this->minoType = minoType;
     }
     int getShape(int rotationCount, int y, int x) {
         return shape[rotationCount][y][x];
     }
-    int getX() {
-        return x;
-    }
-    int getY() {
-        return y;
-    }
-    int getRotationCount() {
-        return rotationCount;
-    }
+    int getX() { return x; }
+    int getY() { return y; }
+    int getRotationCount() { return rotationCount; }
     double getFallElapsedTime() {
         return ((double)(clock() - fallStartTime) / CLOCKS_PER_SEC);
     }
     void setFallElapsedTime(clock_t fallStartTime) {
         this->fallStartTime = fallStartTime;
     }
-    bool hasLanded() {
-        return landed;
-    }
-    int getColor() {
-        return color;
-    }
-    void setLanded(bool landed) {
-        this->landed = landed;
-    }
+    bool hasLanded() { return landed; }
+    int getMinoType() { return minoType; }
+    void setLanded(bool landed) { this->landed = landed; }
     void down() { // 블럭 한 칸 아래 이동
         y++;
         fallStartTime = clock();
-
     }
     void left() { // 블럭 한 칸 왼쪽 이동
         x--;
@@ -280,53 +279,40 @@ public:
     void rotate() { // 블럭 회전
         rotationCount = (rotationCount + 1) % 4;
     }
-    void setX(int x) {
-        this->x = x;
-    }
-    void setY(int y) {
-        this->y = y;
-    }
-    void setRotationCount(int r) {
-        this->rotationCount = r;
-    }
+    void setX(int x) { this->x = x; }
+    void setY(int y) { this->y = y; }
+    void setRotationCount(int r) { this->rotationCount = r; }
     void setShape(int r, int y, int x, int value) {
         this->shape[r][y][x] = value;
     }
-    void up() { //hard drop 처리용 블럭 한 칸 위로 이동
+    void up() { // hard drop 처리용 블럭 한 칸 위로 이동
         y--;
     }
 };
 
-class MainMenu {
-public:
-    MainMenu() {
-        cout << "\n\n\n\n";
-        cout << "\t\t"; cout << "@@@@@@@@@@@@  @@@@@@@@@   @@@@@@@@@@@  @@@@@@@@   @   @@@@@@@@@@@\n";
-        cout << "\t\t"; cout << "      @       @                @       @      @   @   @          \n";
-        cout << "\t\t"; cout << "      @       @                @       @      @   @   @          \n";
-        cout << "\t\t"; cout << "      @       @@@@@@@@@        @       @     @    @   @@@@@@@@@@@\n";
-        cout << "\t\t"; cout << "      @       @                @       @ @ @      @             @\n";
-        cout << "\t\t"; cout << "      @       @                @       @     @    @             @\n";
-        cout << "\t\t"; cout << "      @       @@@@@@@@@        @       @      @   @   @@@@@@@@@@@\n\n\n\n\n";
-        cout << "\t\t"; cout << "                게임을 시작하려면 아무키나 누르세요.\n\n\n\n\n\n\n";
-
-        getchar(); // 아무키 입력 기다림
-        system("cls"); // 콘솔 창 clear
-    }
-};
-
 class GameTable {
-private:
+  private:
     Block block;
     Block backupBlock;
 
-    vector<vector<int> > table;
-    vector<vector<int> > backupTable;
+    vector<vector<int>> table;
+    vector<vector<int>> backupTable;
 
     clock_t start, end;
 
-public:
-    GameTable() { //테트리스 판 뼈대 생성
+    unordered_map<int, sf::Texture> blockTextureMap;
+
+  public:
+    GameTable() {
+        blockTextureMap[WALL].loadFromFile("images/block_wall.png");
+        blockTextureMap[MINO_I].loadFromFile("images/block_I.png");
+        blockTextureMap[MINO_O].loadFromFile("images/block_O.png");
+        blockTextureMap[MINO_Z].loadFromFile("images/block_Z.png");
+        blockTextureMap[MINO_S].loadFromFile("images/block_S.png");
+        blockTextureMap[MINO_J].loadFromFile("images/block_J.png");
+        blockTextureMap[MINO_L].loadFromFile("images/block_L.png");
+        blockTextureMap[MINO_T].loadFromFile("images/block_T.png");
+
         for (int tableY = 0; tableY < TABLE_HEIGHT; tableY++) {
             vector<int> temp;
             for (int tableX = 0; tableX < TABLE_WIDTH; tableX++) {
@@ -337,68 +323,69 @@ public:
         for (int tableX = 0; tableX < TABLE_WIDTH; tableX++) {
             table[TABLE_HEIGHT - 1][tableX] = WALL;
         }
-        for (int tableY = 1; tableY < TABLE_HEIGHT - 1; tableY++) {
+        for (int tableY = 0; tableY < TABLE_HEIGHT - 1; tableY++) {
             table[tableY][0] = 1;
             table[tableY][TABLE_WIDTH - 1] = WALL;
         }
         for (int tableX = 1; tableX < TABLE_WIDTH - 1; tableX++) {
-            table[TABLE_HEIGHT - 1][tableX] = FLOOR;
+            table[TABLE_HEIGHT - 1][tableX] = WALL;
         }
         for (int tableX = 1; tableX < TABLE_WIDTH - 1; tableX++) {
             table[END_Y][tableX] = END_LINE;
         }
-        createBlock(true);
-        drawGameTable();
     }
 
     bool isInvalidPosition(const int tableY, const int tableX) {
         return (tableY < 0 || tableX < 0 || tableY >= TABLE_HEIGHT || tableX >= TABLE_WIDTH);
     }
-    bool isColor(const int y, const int x) {
-        return (9 <= table[y][x] and table[y][x] <= 14);
+    bool isMino(const int y, const int x) {
+        return (5000 <= table[y][x] and table[y][x] <= 5006);
     }
-    bool isFloor(const int y, const int x) {
-        return table[y][x] == FLOOR;
-    }
+    bool isWall(const int y, const int x) { return table[y][x] == WALL; }
     void restore() {
         block = backupBlock;
         table = backupTable;
     }
-    void restoreBlock() {
-        block = backupBlock;
-    }
+    void restoreBlock() { block = backupBlock; }
     void backup() {
         backupBlock = block;
         backupTable = table;
     }
 
-
     /*게임판 그리는 함수*/
-    void drawGameTable() {
-        gotoxy(0, 0); //system("cls") 안쓰고 (0, 0)으로 커서 이동 후
+    void drawGameTable(sf::RenderWindow *window) {
+        window->clear(sf::Color::Black);
+        sf::Sprite sprite;
+
         for (int y = 0; y < TABLE_HEIGHT; y++) {
             for (int x = 0; x < TABLE_WIDTH; x++) {
+                sprite.setColor(sf::Color::White);
                 if (table[y][x] == WALL) {
-                    setColor(GRAY);
-                    cout << "▧ ";
+                    sprite.setTexture(blockTextureMap[WALL]);
+                    sprite.setTextureRect(sf::IntRect(0, 0, 32, 32));
+                    sprite.setPosition(x * 32, y * 32);
+                    window->draw(sprite);
                 } else if (table[y][x] == FALLING) {
-                    setColor(block.getColor());
-                    cout << "▧ ";
-                } else if (table[y][x] == FLOOR) {
-                    setColor(GRAY);
-                    cout << "▧ ";
-                } else if (isColor(y, x)) {
-                    setColor(table[y][x]);
-                    cout << "▧ ";
+                    sprite.setTexture(blockTextureMap[block.getMinoType()]);
+                    sprite.setTextureRect(sf::IntRect(0, 0, 32, 32));
+                    sprite.setPosition(x * 32, y * 32);
+                    window->draw(sprite);
+                } else if (isMino(y, x)) {
+                    sprite.setTexture(blockTextureMap[table[y][x]]);
+                    sprite.setTextureRect(sf::IntRect(0, 0, 32, 32));
+                    sprite.setPosition(x * 32, y * 32);
+                    window->draw(sprite);
                 } else if (table[y][x] == GHOST_PIECE) {
-                    setColor(block.getColor());
-                    cout << "□ ";
-                } else {
-                    cout << "  ";
+                    sprite.setTexture(blockTextureMap[block.getMinoType()]);
+                    sprite.setTextureRect(sf::IntRect(0, 0, 32, 32));
+                    sprite.setColor(sf::Color(200, 200, 200, 150)); // 투명 효과
+                    sprite.setPosition(x * 32, y * 32);
+                    window->draw(sprite);
                 }
             }
-            cout << "\n";
         }
+
+        window->display();
     }
     /*블럭 생성*/
     bool createBlock(bool isFirstBlock) {
@@ -407,20 +394,31 @@ public:
         }
 
         srand((unsigned int)time(NULL));
-        int select = rand() % 5 + 1; // 1 ~ 5 블럭
-        if (select == 1) block = Block(block1, BLUE_GREEN); // 1번 블럭 생성
-        else if (select == 2)block = Block(block2, YELLOW); // 2번 블럭 생성
-        else if (select == 3)block = Block(block3, BLUE); // 3번 블럭 생성
-        else if (select == 4)block = Block(block4, GREEN); // 4번 블럭 생성
-        else if (select == 5)block = Block(block5, RED); // 5번 블럭 생성
-
+        int select = rand() % 7 + 1; // I, O, Z, S, J, L, T
+        if (select == 1) {
+            block = Block(blockI, MINO_I); // I미노 생성
+        } else if (select == 2) {
+            block = Block(blockO, MINO_O); // O미노 생성
+        } else if (select == 3) {
+            block = Block(blockZ, MINO_Z); // Z미노 생성
+        } else if (select == 4) {
+            block = Block(blockS, MINO_S); // S미노 생성
+        } else if (select == 5) {
+            block = Block(blockJ, MINO_J); // J미노 생성
+        } else if (select == 6) {
+            block = Block(blockL, MINO_L); // L미노 생성
+        } else if (select == 7) {
+            block = Block(blockT, MINO_T); // T미노 생성
+        }
         for (int blockY = 0; blockY < 4; blockY++) {
             for (int blockX = 0; blockX < 4; blockX++) {
                 int tableY = blockY + block.getY();
                 int tableX = blockX + block.getX();
 
-                if (isInvalidPosition(tableY, tableX)) continue;
-                if (isColor(tableY, tableX)) {
+                if (isInvalidPosition(tableY, tableX)) {
+                    continue;
+                }
+                if (isMino(tableY, tableX)) {
                     return false;
                 }
                 table[tableY][tableX] = block.getShape(block.getRotationCount(), blockY, blockX);
@@ -440,13 +438,13 @@ public:
     }
 
     bool canMoveOrRotateBlock(const int key) {
-        if (key == UP) {
+        if (key == sf::Keyboard::Up) {
             block.rotate();
-        } else if (key == DOWN || key == AUTO_DROP) {
+        } else if (key == sf::Keyboard::Down || key == AUTO_DROP) {
             block.down();
-        } else if (key == LEFT) {
+        } else if (key == sf::Keyboard::Left) {
             block.left();
-        } else if (key == RIGHT) {
+        } else if (key == sf::Keyboard::Right) {
             block.right();
         }
 
@@ -455,7 +453,9 @@ public:
                 int x = j + block.getX();
                 int y = i + block.getY();
 
-                if (isInvalidPosition(y, x)) continue;
+                if (isInvalidPosition(y, x)) {
+                    continue;
+                }
 
                 int blockValue = block.getShape(block.getRotationCount(), i, j);
 
@@ -473,7 +473,7 @@ public:
     }
 
     void operateBlock(const int key) {
-        if (key == UP || key == DOWN || key == LEFT || key == RIGHT) {
+        if (key == sf::Keyboard::Up || key == sf::Keyboard::Down || key == sf::Keyboard::Left || key == sf::Keyboard::Right) {
             backup();
             clearCellsOfType(FALLING);
             if (!canMoveOrRotateBlock(key)) {
@@ -492,7 +492,7 @@ public:
             return;
         }
 
-        if (key == SPACE) {
+        if (key == sf::Keyboard::Space) {
             hardDropBlock();
             return;
         }
@@ -508,13 +508,15 @@ public:
                 int tableY = blockY + block.getY();
                 int tableX = blockX + block.getX();
 
-                if (isInvalidPosition(tableY, tableX)) continue;
+                if (isInvalidPosition(tableY, tableX)) {
+                    continue;
+                }
 
                 int blockValue = block.getShape(block.getRotationCount(), blockY, blockX);
                 if (blockValue != FALLING) {
                     continue;
                 }
-                table[tableY][tableX] = block.getColor();
+                table[tableY][tableX] = block.getMinoType();
             }
         }
         block.setLanded(true);
@@ -526,7 +528,9 @@ public:
                 int tableY = blockY + block.getY();
                 int tableX = blockX + block.getX();
 
-                if (isInvalidPosition(tableY, tableX)) continue;
+                if (isInvalidPosition(tableY, tableX)) {
+                    continue;
+                }
 
                 int blockValue = block.getShape(block.getRotationCount(), blockY, blockX);
                 if (blockValue != FALLING) {
@@ -546,13 +550,15 @@ public:
                     int tableY = blockY + block.getY();
                     int tableX = blockX + block.getX();
 
-                    if (isInvalidPosition(tableY, tableX)) continue;
+                    if (isInvalidPosition(tableY, tableX)) {
+                        continue;
+                    }
 
                     int blockValue = block.getShape(block.getRotationCount(), blockY, blockX);
                     if (blockValue != FALLING) {
                         continue;
                     }
-                    if (isColor(tableY, tableX) || isFloor(tableY, tableX)) {
+                    if (isMino(tableY, tableX) || isWall(tableY, tableX)) {
                         return;
                     }
                 }
@@ -582,7 +588,7 @@ public:
         for (int tableY = END_Y + 1; tableY < TABLE_HEIGHT - 1; tableY++) {
             bool isLinear = true;
             for (int tableX = 1; tableX < TABLE_WIDTH - 1; tableX++) {
-                if (!isColor(tableY, tableX)) {
+                if (!isMino(tableY, tableX)) {
                     isLinear = false;
                     break;
                 }
@@ -601,7 +607,7 @@ public:
     /*쌓은 블록이 게임 종료 선에 닿았는지 체크*/
     bool hasReachedEnd() {
         for (int tableX = 1; tableX < TABLE_WIDTH - 1; tableX++) {
-            if (isColor(END_Y, tableX)) {
+            if (isMino(END_Y, tableX)) {
                 return true;
             }
         }
@@ -610,45 +616,48 @@ public:
 };
 
 class GamePlay {
-private:
-    GameTable* gt;
-public:
-    int readKey() {
+  private:
+    GameTable *gt;
+    sf::RenderWindow *window;
 
-        if (_kbhit()) {
-            int nSelect = _getch();
-            if (nSelect == 224) {
-                return _getch();
-
+  public:
+    int pollKeyPressed() {
+        sf::Event event;
+        while (window->pollEvent(event)) {
+            if (event.type == sf::Event::Closed) {
+                window->close();
             }
-            return nSelect;
+
+            if (event.type == sf::Event::KeyPressed) {
+                return event.key.code;
+            }
         }
+        return 0;
     }
     GamePlay() {
         gt = new GameTable();
-        while (true) {
-            gt->deleteLinear();
+        window = new sf::RenderWindow(sf::VideoMode(1000, 800), "Tetris");
+        gt->createBlock(true);
+        while (window->isOpen()) {
+            gt->drawGameTable(window);
             if (gt->hasReachedEnd()) {
                 return;
             }
             gt->operateBlock(GHOST_PIECE_DROP);
             gt->operateBlock(AUTO_DROP);
-            gt->operateBlock(readKey());
+            gt->operateBlock(pollKeyPressed());
+            gt->deleteLinear();
             gt->createBlock(false);
-            gt->drawGameTable();
         }
     }
     ~GamePlay() { // 게임 종료 이벤트
-        gotoxy(50, 10);
         cout << "Game Over!";
         delete gt;
+        delete window;
     }
 };
-int main(void) {
-    cursorView(false); // 콘솔 화면 커서 제거
-    SetConsoleTitle(TEXT("테트리스 게임"));
-    MainMenu(); // 메인 메뉴 그리기 생성자 호출
-    GamePlay(); // 게임 플레이
-    getchar();
+
+int main() {
+    GamePlay();
     return 0;
 }
