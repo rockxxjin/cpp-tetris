@@ -1,5 +1,6 @@
 #include <SFML/Graphics.hpp>
 #include <iostream>
+#include <random>
 #include <unordered_map>
 #include <vector>
 using namespace std;
@@ -224,6 +225,13 @@ constexpr int blockT[4][4][4] = {
 };
 
 // clang-format on
+class RandomGenerator {
+  public:
+    static int get(int min, int max) {
+        static thread_local mt19937 mt{random_device{}()};
+        return uniform_int_distribution<int>{min, max}(mt);
+    }
+};
 
 class Block {
   private:
@@ -393,8 +401,7 @@ class GameTable {
             return true;
         }
 
-        srand((unsigned int)time(NULL));
-        int select = rand() % 7 + 1; // I, O, Z, S, J, L, T
+        int select = RandomGenerator::get(1, 7); // I, O, Z, S, J, L, T
         if (select == 1) {
             block = Block(blockI, MINO_I); // I미노 생성
         } else if (select == 2) {
