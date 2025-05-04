@@ -245,11 +245,37 @@ class Block {
 
   public:
     Block() {}
-    Block(const int shape[4][4][4], int minoType) {
+    Block(int minoType) {
         x = TABLE_WIDTH / 2 - 3;
         y = -1;
         rotationCount = 0;
         landed = false;
+        const int (*shape)[4][4] = nullptr;
+
+        switch (minoType) {
+        case MINO_I:
+            shape = blockI;
+            break;
+        case MINO_O:
+            shape = blockO;
+            break;
+        case MINO_Z:
+            shape = blockZ;
+            break;
+        case MINO_S:
+            shape = blockS;
+            break;
+        case MINO_J:
+            shape = blockJ;
+            break;
+        case MINO_L:
+            shape = blockL;
+            break;
+        case MINO_T:
+            shape = blockT;
+            break;
+        }
+
         for (int i = 0; i < 4; i++) {
             for (int j = 0; j < 4; j++) {
                 for (int k = 0; k < 4; k++) {
@@ -401,22 +427,9 @@ class GameTable {
             return true;
         }
 
-        int select = RandomGenerator::get(1, 7); // I, O, Z, S, J, L, T
-        if (select == 1) {
-            block = Block(blockI, MINO_I); // I미노 생성
-        } else if (select == 2) {
-            block = Block(blockO, MINO_O); // O미노 생성
-        } else if (select == 3) {
-            block = Block(blockZ, MINO_Z); // Z미노 생성
-        } else if (select == 4) {
-            block = Block(blockS, MINO_S); // S미노 생성
-        } else if (select == 5) {
-            block = Block(blockJ, MINO_J); // J미노 생성
-        } else if (select == 6) {
-            block = Block(blockL, MINO_L); // L미노 생성
-        } else if (select == 7) {
-            block = Block(blockT, MINO_T); // T미노 생성
-        }
+        int minoType = RandomGenerator::get(5000, 5006); // I, O, Z, S, J, L, T
+        block = Block(minoType);
+
         for (int blockY = 0; blockY < 4; blockY++) {
             for (int blockX = 0; blockX < 4; blockX++) {
                 int tableY = blockY + block.getY();
