@@ -8,6 +8,10 @@ set(SOURCES
     src/block/Block.cpp
     src/core/GameTable.cpp
     src/core/GamePlay.cpp
+    src/core/GameScore.cpp
+    src/core/GameLevel.cpp
+    src/core/GameLines.cpp
+    src/core/GameTitle.cpp
     src/utils/RandomGenerator.cpp
 )
 

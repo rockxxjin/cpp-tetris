@@ -22,6 +22,23 @@ constexpr int MINO_J = 5004;
 constexpr int MINO_L = 5005;
 constexpr int MINO_T = 5006;
 
+constexpr int SCORE_X = 475;
+constexpr int SCORE_Y = 75;
+constexpr int SCORE_FONT_SIZE = 25;
+
+constexpr int LEVEL_X = 475;
+constexpr int LEVEL_Y = 115;
+constexpr int LEVEL_FONT_SIZE = 25;
+
+constexpr int LINES_X = 475;
+constexpr int LINES_Y = 155;
+constexpr int LINES_FONT_SIZE = 25;
+constexpr int LINES_TO_LEVEL_UP = 10;
+
+constexpr int TITLE_X = 410;
+constexpr int TITLE_Y = 10;
+constexpr int TITLE_FONT_SIZE = 50;
+
 // clang-format off
 // I 블록
 constexpr int blockI[4][4][4] = {

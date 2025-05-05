@@ -42,6 +42,6 @@ class GameTable {
 
     void hardDropGhostPiece();
 
-    void deleteLinear();
+    int deleteLinear();
     bool hasReachedEnd();
 };

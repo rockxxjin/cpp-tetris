@@ -3,14 +3,14 @@
 using namespace std;
 
 GameTable::GameTable() {
-    blockTextureMap[WALL].loadFromFile("images/block_wall.png");
-    blockTextureMap[MINO_I].loadFromFile("images/block_I.png");
-    blockTextureMap[MINO_O].loadFromFile("images/block_O.png");
-    blockTextureMap[MINO_Z].loadFromFile("images/block_Z.png");
-    blockTextureMap[MINO_S].loadFromFile("images/block_S.png");
-    blockTextureMap[MINO_J].loadFromFile("images/block_J.png");
-    blockTextureMap[MINO_L].loadFromFile("images/block_L.png");
-    blockTextureMap[MINO_T].loadFromFile("images/block_T.png");
+    blockTextureMap[WALL].loadFromFile("assets/images/block_wall.png");
+    blockTextureMap[MINO_I].loadFromFile("assets/images/block_I.png");
+    blockTextureMap[MINO_O].loadFromFile("assets/images/block_O.png");
+    blockTextureMap[MINO_Z].loadFromFile("assets/images/block_Z.png");
+    blockTextureMap[MINO_S].loadFromFile("assets/images/block_S.png");
+    blockTextureMap[MINO_J].loadFromFile("assets/images/block_J.png");
+    blockTextureMap[MINO_L].loadFromFile("assets/images/block_L.png");
+    blockTextureMap[MINO_T].loadFromFile("assets/images/block_T.png");
 
     for (int tableY = 0; tableY < TABLE_HEIGHT; tableY++) {
         vector<int> temp;
@@ -53,7 +53,6 @@ void GameTable::backup() {
 
 /*게임판 그리는 함수*/
 void GameTable::drawGameTable(sf::RenderWindow *window) {
-    window->clear(sf::Color::Black);
     sf::Sprite sprite;
 
     for (int y = 0; y < TABLE_HEIGHT; y++) {
@@ -83,8 +82,6 @@ void GameTable::drawGameTable(sf::RenderWindow *window) {
             }
         }
     }
-
-    window->display();
 }
 /*블럭 생성*/
 bool GameTable::createBlock(bool isFirstBlock) {
@@ -269,7 +266,8 @@ void GameTable::hardDropGhostPiece() {
 }
 
 /*일직선 삭제*/
-void GameTable::deleteLinear() {
+int GameTable::deleteLinear() {
+    int cnt = 0;
     for (int tableY = END_Y + 1; tableY < TABLE_HEIGHT - 1; tableY++) {
         bool isLinear = true;
         for (int tableX = 1; tableX < TABLE_WIDTH - 1; tableX++) {
@@ -279,6 +277,7 @@ void GameTable::deleteLinear() {
             }
         }
         if (isLinear) {
+            cnt++;
             for (int shiftY = tableY; shiftY > END_Y + 1; shiftY--) {
                 for (int tableX = 1; tableX < TABLE_WIDTH - 1; tableX++) {
                     if (table[shiftY - 1][tableX] != FALLING) {
@@ -288,6 +287,7 @@ void GameTable::deleteLinear() {
             }
         }
     }
+    return cnt;
 }
 /*쌓은 블록이 게임 종료 선에 닿았는지 체크*/
 bool GameTable::hasReachedEnd() {

@@ -1,4 +1,5 @@
 #include "GamePlay.hpp"
+#include "GameScore.hpp"
 #include <iostream>
 
 int GamePlay::pollKeyPressed() {
@@ -16,24 +17,45 @@ int GamePlay::pollKeyPressed() {
 }
 
 GamePlay::GamePlay() {
-    gt = new GameTable();
+    gameTable = new GameTable();
+    gameScore = new GameScore();
+    gameLevel = new GameLevel();
+    gameLines = new GameLines();
+    gameTitle = new GameTitle();
     window = new sf::RenderWindow(sf::VideoMode(1000, 800), "Tetris");
-    gt->createBlock(true);
+    gameTable->createBlock(true);
     while (window->isOpen()) {
-        gt->drawGameTable(window);
-        if (gt->hasReachedEnd()) {
+        window->clear(sf::Color::Black);
+        gameTable->drawGameTable(window);
+        gameScore->drawScore(window);
+        gameLevel->drawLevel(window);
+        gameLines->drawLines(window);
+        gameTitle->drawTitle(window);
+        window->display();
+
+        if (gameTable->hasReachedEnd()) {
             return;
         }
-        gt->operateBlock(GHOST_PIECE_DROP);
-        gt->operateBlock(AUTO_DROP);
-        gt->operateBlock(pollKeyPressed());
-        gt->deleteLinear();
-        gt->createBlock(false);
+        gameTable->operateBlock(GHOST_PIECE_DROP);
+        gameTable->operateBlock(AUTO_DROP);
+        gameTable->operateBlock(pollKeyPressed());
+        if (int lines = gameTable->deleteLinear()) {
+            gameLevel->decreaseRemainingLines(lines);
+            gameLines->addLines(lines);
+            gameScore->addScore(gameScore->calculateScore(lines, gameLevel->getLevel()));
+        }
+        if (gameLevel->shoudLevelUp()) {
+            gameLevel->levelUp();
+        }
+        gameTable->createBlock(false);
     }
 }
 
 GamePlay::~GamePlay() { // 게임 종료 이벤트
     std::cout << "Game Over!";
-    delete gt;
+    delete gameTable;
+    delete gameScore;
+    delete gameLevel;
+    delete gameLines;
     delete window;
 }
