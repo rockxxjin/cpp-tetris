@@ -29,9 +29,6 @@ GameTable::GameTable() {
     for (int tableX = 1; tableX < TABLE_WIDTH - 1; tableX++) {
         table[TABLE_HEIGHT - 1][tableX] = WALL;
     }
-    for (int tableX = 1; tableX < TABLE_WIDTH - 1; tableX++) {
-        table[END_Y][tableX] = END_LINE;
-    }
 }
 
 bool GameTable::isInvalidPosition(const int tableY, const int tableX) {

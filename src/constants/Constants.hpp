@@ -8,8 +8,7 @@ constexpr int EMPTY = 0;
 constexpr int WALL = 1;
 constexpr int FALLING = 2;
 constexpr int LANDED = 3;
-constexpr int END_LINE = 4;
-constexpr int GHOST_PIECE = 5;
+constexpr int GHOST_PIECE = 4;
 
 constexpr int AUTO_DROP = 9999;
 constexpr int GHOST_PIECE_DROP = 10000;
