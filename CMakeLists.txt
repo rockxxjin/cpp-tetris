@@ -7,7 +7,7 @@ set(SOURCES
     src/main.cpp
     src/block/Block.cpp
     src/core/GameTable.cpp
-    src/core/GamePlay.cpp
+    src/core/Game.cpp
     src/core/GameScore.cpp
     src/core/GameLevel.cpp
     src/core/GameLines.cpp

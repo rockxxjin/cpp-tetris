@@ -27,7 +27,7 @@ class GameTable {
     void restoreBlock();
     void backup();
 
-    void drawGameTable(sf::RenderWindow *window);
+    void drawGameTable(sf::RenderWindow& window);
     bool createBlock(bool isFirstBlock);
     void clearCellsOfType(int cellType);
 

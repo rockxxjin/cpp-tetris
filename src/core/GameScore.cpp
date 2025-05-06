@@ -5,18 +5,18 @@ GameScore::GameScore() {
     score = 0;
     font.loadFromFile("assets/fonts/Press_Start_2P/PressStart2P-Regular.ttf");
 }
-void GameScore::drawScore(sf::RenderWindow *window) {
+void GameScore::drawScore(sf::RenderWindow& window) {
     sf::Text text;
     text.setFont(font);
     text.setString("SCORE:");
     text.setCharacterSize(SCORE_FONT_SIZE);
     text.setFillColor(sf::Color::White);
     text.setPosition(SCORE_X, SCORE_Y);
-    window->draw(text);
+    window.draw(text);
 
     text.setString(std::to_string(score));
     text.setPosition(SCORE_X + 6 * SCORE_FONT_SIZE, SCORE_Y);
-    window->draw(text);
+    window.draw(text);
 }
 
 void GameScore::addScore(int score) {

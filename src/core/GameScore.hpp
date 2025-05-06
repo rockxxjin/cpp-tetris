@@ -9,7 +9,7 @@ class GameScore {
 
   public:
     GameScore();
-    void drawScore(sf::RenderWindow *window);
+    void drawScore(sf::RenderWindow& window);
     void addScore(int score);
     int calculateScore(int lines, int level);
 };

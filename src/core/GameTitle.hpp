@@ -8,5 +8,5 @@ class GameTitle {
 
   public:
     GameTitle();
-    void drawTitle(sf::RenderWindow *window);
+    void drawTitle(sf::RenderWindow& window);
 };

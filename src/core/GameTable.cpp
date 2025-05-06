@@ -52,7 +52,7 @@ void GameTable::backup() {
 }
 
 /*게임판 그리는 함수*/
-void GameTable::drawGameTable(sf::RenderWindow *window) {
+void GameTable::drawGameTable(sf::RenderWindow& window) {
     sf::Sprite sprite;
 
     for (int y = 0; y < TABLE_HEIGHT; y++) {
@@ -62,23 +62,23 @@ void GameTable::drawGameTable(sf::RenderWindow *window) {
                 sprite.setTexture(blockTextureMap[WALL]);
                 sprite.setTextureRect(sf::IntRect(0, 0, 32, 32));
                 sprite.setPosition(x * 32, y * 32);
-                window->draw(sprite);
+                window.draw(sprite);
             } else if (table[y][x] == FALLING) {
                 sprite.setTexture(blockTextureMap[block.getMinoType()]);
                 sprite.setTextureRect(sf::IntRect(0, 0, 32, 32));
                 sprite.setPosition(x * 32, y * 32);
-                window->draw(sprite);
+                window.draw(sprite);
             } else if (isMino(y, x)) {
                 sprite.setTexture(blockTextureMap[table[y][x]]);
                 sprite.setTextureRect(sf::IntRect(0, 0, 32, 32));
                 sprite.setPosition(x * 32, y * 32);
-                window->draw(sprite);
+                window.draw(sprite);
             } else if (table[y][x] == GHOST_PIECE) {
                 sprite.setTexture(blockTextureMap[block.getMinoType()]);
                 sprite.setTextureRect(sf::IntRect(0, 0, 32, 32));
                 sprite.setColor(sf::Color(200, 200, 200, 150)); // 투명 효과
                 sprite.setPosition(x * 32, y * 32);
-                window->draw(sprite);
+                window.draw(sprite);
             }
         }
     }

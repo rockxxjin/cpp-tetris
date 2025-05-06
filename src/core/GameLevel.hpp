@@ -14,5 +14,5 @@ class GameLevel {
     void decreaseRemainingLines(int lines);
     bool shoudLevelUp();
     void levelUp();
-    void drawLevel(sf::RenderWindow *window);
+    void drawLevel(sf::RenderWindow& window);
 };

@@ -5,7 +5,7 @@ GameTitle::GameTitle() {
     font.loadFromFile("assets/fonts/Press_Start_2P/PressStart2P-Regular.ttf");
 }
 
-void GameTitle::drawTitle(sf::RenderWindow *window) {
+void GameTitle::drawTitle(sf::RenderWindow& window) {
     std::string title = "TETRIS";
     sf::Color colors[] = {
         sf::Color(160, 0, 240), // T - 보라색 (Purple, T 블록)
@@ -23,6 +23,6 @@ void GameTitle::drawTitle(sf::RenderWindow *window) {
         text.setCharacterSize(TITLE_FONT_SIZE);
         text.setFillColor(colors[i]);
         text.setPosition(TITLE_X + i * TITLE_FONT_SIZE, TITLE_Y);
-        window->draw(text);
+        window.draw(text);
     }
 }

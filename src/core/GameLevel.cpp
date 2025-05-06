@@ -23,16 +23,16 @@ void GameLevel::levelUp() {
     remainingLinesToLevelUp = LINES_TO_LEVEL_UP;
 }
 
-void GameLevel::drawLevel(sf::RenderWindow *window) {
+void GameLevel::drawLevel(sf::RenderWindow& window) {
     sf::Text text;
     text.setFont(font);
     text.setString("Level:");
     text.setCharacterSize(LEVEL_FONT_SIZE);
     text.setFillColor(sf::Color::White);
     text.setPosition(LEVEL_X, LEVEL_Y);
-    window->draw(text);
+    window.draw(text);
 
     text.setString(std::to_string(level));
     text.setPosition(LEVEL_X + 6 * LEVEL_FONT_SIZE, LEVEL_Y);
-    window->draw(text);
+    window.draw(text);
 }

@@ -9,6 +9,6 @@ class GameLines {
 
   public:
     GameLines();
-    void drawLines(sf::RenderWindow *window);
+    void drawLines(sf::RenderWindow& window);
     void addLines(int lines);
 };

@@ -1,6 +1,7 @@
-#include "core/GamePlay.hpp"
+#include "core/Game.hpp"
 
 int main() {
-    GamePlay();
+    Game game;
+    game.run();
     return 0;
 }
