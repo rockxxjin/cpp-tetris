@@ -1,5 +1,6 @@
 #include "GameLevel.hpp"
 #include "constants/Constants.hpp"
+#include <cmath>
 GameLevel::GameLevel() {
     level = 1;
     remainingLinesToLevelUp = LINES_TO_LEVEL_UP;
@@ -35,4 +36,9 @@ void GameLevel::drawLevel(sf::RenderWindow& window) {
     text.setString(std::to_string(level));
     text.setPosition(LEVEL_X + 6 * LEVEL_FONT_SIZE, LEVEL_Y);
     window.draw(text);
+}
+
+// Reference: https://tetris.wiki/Marathon
+float GameLevel::calculateFallInterval() {
+    return std::pow(0.8f - ((level - 1.0f) * 0.007f), (level - 1.0f));
 }

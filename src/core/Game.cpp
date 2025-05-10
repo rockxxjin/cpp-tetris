@@ -1,6 +1,5 @@
 #include "Game.hpp"
 #include "GameScore.hpp"
-#include <iostream>
 
 int Game::pollKeyPressed() {
     sf::Event event;
@@ -27,7 +26,10 @@ void Game::render() {
 
 void Game::processBlockActions() {
     gameTable.operateBlock(GHOST_PIECE_DROP);
-    gameTable.operateBlock(AUTO_DROP);
+    if (fallTimer > (float)gameLevel.calculateFallInterval()) {
+        fallTimer -= gameLevel.calculateFallInterval();
+        gameTable.operateBlock(AUTO_DROP);
+    }
     gameTable.operateBlock(pollKeyPressed());
 }
 
@@ -49,6 +51,8 @@ void Game::handleLineClears() {
 void Game::run() {
     gameTable.createBlock(true);
     while (window->isOpen()) {
+        float deltaTime = clock.restart().asSeconds();
+        fallTimer += deltaTime;
         render();
         if (checkGameOver()) {
             return;
@@ -61,4 +65,5 @@ void Game::run() {
 
 Game::Game() {
     window = std::make_unique<sf::RenderWindow>(sf::VideoMode(1000, 800), "Tetris");
+    window->setFramerateLimit(60);
 }

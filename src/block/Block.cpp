@@ -53,14 +53,6 @@ int Block::getY() { return y; }
 
 int Block::getRotationCount() { return rotationCount; }
 
-double Block::getFallElapsedTime() {
-    return ((double)(clock() - fallStartTime) / CLOCKS_PER_SEC);
-}
-
-void Block::setFallElapsedTime(clock_t fallStartTime) {
-    this->fallStartTime = fallStartTime;
-}
-
 bool Block::hasLanded() { return landed; }
 
 int Block::getMinoType() { return minoType; }
@@ -69,7 +61,6 @@ void Block::setLanded(bool landed) { this->landed = landed; }
 
 void Block::down() { // 블럭 한 칸 아래 이동
     y++;
-    fallStartTime = clock();
 }
 
 void Block::left() { // 블럭 한 칸 왼쪽 이동

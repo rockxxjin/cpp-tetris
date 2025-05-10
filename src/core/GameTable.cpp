@@ -103,7 +103,6 @@ bool GameTable::createBlock(bool isFirstBlock) {
             table[tableY][tableX] = block.getShape(block.getRotationCount(), blockY, blockX);
         }
     }
-    block.setFallElapsedTime(clock());
 }
 
 void GameTable::clearCellsOfType(int cellType) {
@@ -161,7 +160,7 @@ void GameTable::operateBlock(const int key) {
         return;
     }
 
-    if (key == AUTO_DROP && block.getFallElapsedTime() >= 1.5) {
+    if (key == AUTO_DROP) {
         backup();
         clearCellsOfType(FALLING);
         if (!canMoveOrRotateBlock(key)) {

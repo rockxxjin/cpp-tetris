@@ -15,6 +15,8 @@ class Game {
     GameLines gameLines;
     GameTitle gameTitle;
     std::unique_ptr<sf::RenderWindow> window;
+    sf::Clock clock;
+    float fallTimer;
 
   public:
     int pollKeyPressed();

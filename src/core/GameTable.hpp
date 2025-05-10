@@ -13,8 +13,6 @@ class GameTable {
     std::vector<std::vector<int>> table;
     std::vector<std::vector<int>> backupTable;
 
-    clock_t start, end;
-
     std::unordered_map<int, sf::Texture> blockTextureMap;
 
   public:

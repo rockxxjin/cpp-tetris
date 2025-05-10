@@ -15,4 +15,5 @@ class GameLevel {
     bool shoudLevelUp();
     void levelUp();
     void drawLevel(sf::RenderWindow& window);
+    float calculateFallInterval();
 };

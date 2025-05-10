@@ -9,7 +9,6 @@ class Block {
     int y;              // y좌표
     int rotationCount;  // shape[0][y][x], shape[1][y][x], shape[2][y][x], shaoe[3][y][x]로 4가지 회전 상태 표현
     bool landed;
-    clock_t fallStartTime;
     int minoType;
 
   public:
@@ -19,8 +18,7 @@ class Block {
     int getX();
     int getY();
     int getRotationCount();
-    double getFallElapsedTime();
-    void setFallElapsedTime(clock_t fallStartTime);
+
     bool hasLanded();
     int getMinoType();
     void setLanded(bool landed);
