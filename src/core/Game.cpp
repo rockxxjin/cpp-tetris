@@ -9,7 +9,16 @@ int Game::pollKeyPressed() {
         }
 
         if (event.type == sf::Event::KeyPressed) {
-            return event.key.code;
+            // 게임 오버 상태에서 Enter 키 처리
+            if (gameState == GameState::GAME_OVER && event.key.code == sf::Keyboard::Enter) {
+                resetGame();
+                return 0;
+            }
+
+            // 게임 플레이 중일 때만 키 입력
+            if (gameState == GameState::PLAYING) {
+                return event.key.code;
+            }
         }
     }
     return 0;
@@ -21,6 +30,11 @@ void Game::render() {
     gameLevel.drawLevel(*window);
     gameLines.drawLines(*window);
     gameTitle.drawTitle(*window);
+
+    if (gameState == GameState::GAME_OVER) {
+        gameOver.drawGameOver(*window);
+    }
+
     window->display();
 }
 
@@ -49,18 +63,39 @@ void Game::handleLineClears() {
 }
 
 void Game::run() {
+    gameState = GameState::PLAYING;
     gameTable.createBlock(true);
+
     while (window->isOpen()) {
         float deltaTime = clock.restart().asSeconds();
-        fallTimer += deltaTime;
-        render();
-        if (checkGameOver()) {
-            return;
+
+        if (gameState == GameState::PLAYING) {
+            fallTimer += deltaTime;
+            if (checkGameOver()) {
+                gameState = GameState::GAME_OVER;
+            } else {
+                processBlockActions();
+                handleLineClears();
+                gameTable.createBlock(false);
+            }
         }
-        processBlockActions();
-        handleLineClears();
-        gameTable.createBlock(false);
+        pollKeyPressed();
+        render();
     }
+}
+
+void Game::resetGame() {
+    gameTable = GameTable();
+    gameScore = GameScore();
+    gameLevel = GameLevel();
+    gameLines = GameLines();
+    gameTitle = GameTitle();
+    gameOver = GameOver();
+    gameState = GameState::PLAYING;
+    fallTimer = 0.0f;
+
+    // 새 블록 생성
+    gameTable.createBlock(true);
 }
 
 Game::Game() {

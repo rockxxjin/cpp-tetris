@@ -12,6 +12,7 @@ set(SOURCES
     src/core/GameLevel.cpp
     src/core/GameLines.cpp
     src/core/GameTitle.cpp
+    src/core/GameOver.cpp
     src/utils/RandomGenerator.cpp
 )
 

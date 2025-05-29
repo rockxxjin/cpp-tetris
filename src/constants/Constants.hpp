@@ -38,6 +38,8 @@ constexpr int TITLE_X = 410;
 constexpr int TITLE_Y = 10;
 constexpr int TITLE_FONT_SIZE = 50;
 
+constexpr int GAME_OVER_FONT_SIZE = 50;
+
 // clang-format off
 // I 블록
 constexpr int blockI[4][4][4] = {
