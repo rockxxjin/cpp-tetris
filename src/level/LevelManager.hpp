@@ -2,18 +2,16 @@
 
 #include <SFML/Graphics.hpp>
 
-class GameLevel {
+class LevelManager {
   private:
     int level;
     int remainingLinesToLevelUp;
-    sf::Font font;
 
   public:
-    GameLevel();
+    LevelManager();
     int getLevel();
     void decreaseRemainingLines(int lines);
     bool shoudLevelUp();
     void levelUp();
-    void drawLevel(sf::RenderWindow& window);
     float calculateFallInterval();
 };

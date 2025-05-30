@@ -1,31 +1,28 @@
 #pragma once
 
-#include "block/Block.hpp"
+#include "entities/Block.hpp"
 #include <SFML/Graphics.hpp>
 #include <unordered_map>
 #include <vector>
 
-class GameTable {
+class BoardManager {
   private:
     Block block;
     Block backupBlock;
 
-    std::vector<std::vector<int>> table;
-    std::vector<std::vector<int>> backupTable;
-
-    std::unordered_map<int, sf::Texture> blockTextureMap;
+    std::vector<std::vector<int>> board;
+    std::vector<std::vector<int>> backupBoard;
 
   public:
-    GameTable();
+    BoardManager();
 
-    bool isInvalidPosition(const int tableY, const int tableX);
-    bool isMino(const int y, const int x);
-    bool isWall(const int y, const int x);
+    bool isInvalidPosition(const int boardY, const int boardX);
+    bool isMino(const int boardY, const int boardX);
+    bool isWall(const int boardY, const int boardX);
     void restore();
     void restoreBlock();
     void backup();
 
-    void drawGameTable(sf::RenderWindow& window);
     bool createBlock(bool isFirstBlock);
     void clearCellsOfType(int cellType);
 
@@ -42,4 +39,7 @@ class GameTable {
 
     int deleteLinear();
     bool hasReachedEnd();
+
+    int getCellValue(const int boardY, const int boardX);
+    int getFallingTetrominoType();
 };

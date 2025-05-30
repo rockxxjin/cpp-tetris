@@ -3,7 +3,7 @@
 Block::Block() {}
 
 Block::Block(int minoType) {
-    x = TABLE_WIDTH / 2 - 3;
+    x = BOARD_WIDTH / 2 - 3;
     y = -1;
     rotationCount = 0;
     landed = false;

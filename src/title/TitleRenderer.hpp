@@ -2,11 +2,11 @@
 
 #include <SFML/Graphics.hpp>
 
-class GameTitle {
+class TitleRenderer {
   private:
     sf::Font font;
 
   public:
-    GameTitle();
-    void drawTitle(sf::RenderWindow& window);
+    TitleRenderer();
+    void draw(sf::RenderWindow& window);
 };

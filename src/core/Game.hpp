@@ -1,12 +1,16 @@
 #pragma once
 
+#include "board/BoardManager.hpp"
+#include "board/BoardRenderer.hpp"
 #include "constants/Constants.hpp"
-#include "core/GameLevel.hpp"
-#include "core/GameLines.hpp"
-#include "core/GameOver.hpp"
-#include "core/GameScore.hpp"
-#include "core/GameTable.hpp"
-#include "core/GameTitle.hpp"
+#include "gameover/GameoverRenderer.hpp"
+#include "level/LevelManager.hpp"
+#include "level/LevelRenderer.hpp"
+#include "lines/LinesManager.hpp"
+#include "lines/LinesRenderer.hpp"
+#include "score/ScoreManager.hpp"
+#include "score/ScoreRenderer.hpp"
+#include "title/TitleRenderer.hpp"
 #include <SFML/Graphics.hpp>
 
 enum class GameState {
@@ -16,16 +20,24 @@ enum class GameState {
 
 class Game {
   private:
-    GameTable gameTable;
-    GameScore gameScore;
-    GameLevel gameLevel;
-    GameLines gameLines;
-    GameTitle gameTitle;
-    GameOver gameOver;
     GameState gameState;
     std::unique_ptr<sf::RenderWindow> window;
     sf::Clock clock;
     float fallTimer;
+
+    // managers
+    ScoreManager scoreManager;
+    LinesManager linesManager;
+    LevelManager levelManager;
+    BoardManager boardManager;
+
+    // renderers
+    ScoreRenderer scoreRenderer;
+    LinesRenderer linesRenderer;
+    LevelRenderer levelRenderer;
+    TitleRenderer titleRenderer;
+    BoardRenderer boardRenderer;
+    GameoverRenderer gameoverRenderer;
 
   public:
     int pollKeyPressed();

@@ -5,15 +5,21 @@ set(CMAKE_CXX_STANDARD 17)
 
 set(SOURCES
     src/main.cpp
-    src/block/Block.cpp
-    src/core/GameTable.cpp
+    src/entities/Block.cpp
     src/core/Game.cpp
-    src/core/GameScore.cpp
-    src/core/GameLevel.cpp
-    src/core/GameLines.cpp
-    src/core/GameTitle.cpp
-    src/core/GameOver.cpp
     src/utils/RandomGenerator.cpp
+    src/score/ScoreManager.cpp
+    src/score/ScoreRenderer.cpp
+    src/lines/LinesManager.cpp
+    src/lines/LinesRenderer.cpp
+    src/title/TitleRenderer.cpp
+    src/gameover/GameoverRenderer.cpp
+    src/level/LevelManager.cpp
+    src/level/LevelRenderer.cpp
+    src/board/BoardManager.cpp
+    src/board/BoardRenderer.cpp
+    
+    
 )
 
 

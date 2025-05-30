@@ -1,11 +1,11 @@
-#include "GameTitle.hpp"
+#include "TitleRenderer.hpp"
 #include "constants/Constants.hpp"
 
-GameTitle::GameTitle() {
+TitleRenderer::TitleRenderer() {
     font.loadFromFile("assets/fonts/Press_Start_2P/PressStart2P-Regular.ttf");
 }
 
-void GameTitle::drawTitle(sf::RenderWindow& window) {
+void TitleRenderer::draw(sf::RenderWindow& window) {
     std::string title = "TETRIS";
     sf::Color colors[] = {
         sf::Color(160, 0, 240), // T - 보라색 (Purple, T 블록)

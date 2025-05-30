@@ -1,10 +1,10 @@
-#include "GameOver.hpp"
+#include "GameoverRenderer.hpp"
 #include "constants/Constants.hpp"
-GameOver::GameOver() {
+GameoverRenderer::GameoverRenderer() {
     font.loadFromFile("assets/fonts/Press_Start_2P/PressStart2P-Regular.ttf");
 }
 
-void GameOver::drawGameOver(sf::RenderWindow& window) {
+void GameoverRenderer::draw(sf::RenderWindow& window) {
     sf::RectangleShape overlay(sf::Vector2f(1000, 800));
     overlay.setFillColor(sf::Color(0, 0, 0, 180));
     window.draw(overlay);

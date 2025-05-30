@@ -1,5 +1,4 @@
 #include "Game.hpp"
-#include "GameScore.hpp"
 
 int Game::pollKeyPressed() {
     sf::Event event;
@@ -25,46 +24,47 @@ int Game::pollKeyPressed() {
 }
 void Game::render() {
     window->clear(sf::Color::Black);
-    gameTable.drawGameTable(*window);
-    gameScore.drawScore(*window);
-    gameLevel.drawLevel(*window);
-    gameLines.drawLines(*window);
-    gameTitle.drawTitle(*window);
+
+    boardRenderer.draw(*window, boardManager);
+    scoreRenderer.draw(*window, scoreManager);
+    linesRenderer.draw(*window, linesManager);
+    levelRenderer.draw(*window, levelManager);
+    titleRenderer.draw(*window);
 
     if (gameState == GameState::GAME_OVER) {
-        gameOver.drawGameOver(*window);
+        gameoverRenderer.draw(*window);
     }
 
     window->display();
 }
 
 void Game::processBlockActions() {
-    gameTable.operateBlock(GHOST_PIECE_DROP);
-    if (fallTimer > (float)gameLevel.calculateFallInterval()) {
-        fallTimer -= gameLevel.calculateFallInterval();
-        gameTable.operateBlock(AUTO_DROP);
+    boardManager.operateBlock(GHOST_PIECE_DROP);
+    if (fallTimer > (float)levelManager.calculateFallInterval()) {
+        fallTimer -= levelManager.calculateFallInterval();
+        boardManager.operateBlock(AUTO_DROP);
     }
-    gameTable.operateBlock(pollKeyPressed());
+    boardManager.operateBlock(pollKeyPressed());
 }
 
 bool Game::checkGameOver() {
-    return gameTable.hasReachedEnd();
+    return boardManager.hasReachedEnd();
 }
 
 void Game::handleLineClears() {
-    if (int lines = gameTable.deleteLinear()) {
-        gameLevel.decreaseRemainingLines(lines);
-        gameLines.addLines(lines);
-        gameScore.addScore(gameScore.calculateScore(lines, gameLevel.getLevel()));
+    if (int lines = boardManager.deleteLinear()) {
+        levelManager.decreaseRemainingLines(lines);
+        linesManager.addLines(lines);
+        scoreManager.addScore(scoreManager.calculateScore(lines, levelManager.getLevel()));
     }
-    if (gameLevel.shoudLevelUp()) {
-        gameLevel.levelUp();
+    if (levelManager.shoudLevelUp()) {
+        levelManager.levelUp();
     }
 }
 
 void Game::run() {
     gameState = GameState::PLAYING;
-    gameTable.createBlock(true);
+    boardManager.createBlock(true);
 
     while (window->isOpen()) {
         float deltaTime = clock.restart().asSeconds();
@@ -76,7 +76,7 @@ void Game::run() {
             } else {
                 processBlockActions();
                 handleLineClears();
-                gameTable.createBlock(false);
+                boardManager.createBlock(false);
             }
         }
         pollKeyPressed();
@@ -85,17 +85,17 @@ void Game::run() {
 }
 
 void Game::resetGame() {
-    gameTable = GameTable();
-    gameScore = GameScore();
-    gameLevel = GameLevel();
-    gameLines = GameLines();
-    gameTitle = GameTitle();
-    gameOver = GameOver();
     gameState = GameState::PLAYING;
     fallTimer = 0.0f;
 
+    // managers
+    scoreManager = ScoreManager();
+    linesManager = LinesManager();
+    levelManager = LevelManager();
+    boardManager = BoardManager();
+
     // 새 블록 생성
-    gameTable.createBlock(true);
+    boardManager.createBlock(true);
 }
 
 Game::Game() {

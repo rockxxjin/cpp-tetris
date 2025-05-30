@@ -1,12 +1,11 @@
-#include "GameLines.hpp"
+#include "LinesRenderer.hpp"
 #include "constants/Constants.hpp"
 
-GameLines::GameLines() {
-    lines = 0;
+LinesRenderer::LinesRenderer() {
     font.loadFromFile("assets/fonts/Press_Start_2P/PressStart2P-Regular.ttf");
 }
+void LinesRenderer::draw(sf::RenderWindow& window, LinesManager& linesManager) {
 
-void GameLines::drawLines(sf::RenderWindow& window) {
     sf::Text text;
     text.setFont(font);
     text.setString("LINES:");
@@ -15,11 +14,7 @@ void GameLines::drawLines(sf::RenderWindow& window) {
     text.setPosition(LINES_X, LINES_Y);
     window.draw(text);
 
-    text.setString(std::to_string(lines));
+    text.setString(std::to_string(linesManager.getLines()));
     text.setPosition(LINES_X + 6 * LINES_FONT_SIZE, LINES_Y);
     window.draw(text);
-}
-
-void GameLines::addLines(int lines) {
-    this->lines += lines;
 }

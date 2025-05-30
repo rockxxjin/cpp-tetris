@@ -2,14 +2,13 @@
 
 #include <SFML/Graphics.hpp>
 
-class GameScore {
+class ScoreManager {
   private:
     int score;
-    sf::Font font;
 
   public:
-    GameScore();
-    void drawScore(sf::RenderWindow& window);
+    ScoreManager();
     void addScore(int score);
     int calculateScore(int lines, int level);
+    int getScore();
 };

@@ -2,13 +2,12 @@
 
 #include <SFML/Graphics.hpp>
 
-class GameLines {
+class LinesManager {
   private:
     int lines;
-    sf::Font font;
 
   public:
-    GameLines();
-    void drawLines(sf::RenderWindow& window);
+    LinesManager();
     void addLines(int lines);
+    int getLines();
 };

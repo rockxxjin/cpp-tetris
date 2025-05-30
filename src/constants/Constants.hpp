@@ -1,8 +1,8 @@
 #pragma once
 
 constexpr int END_Y = 0;         // 게임 종료 선
-constexpr int TABLE_WIDTH = 12;  // 테트리스판 가로 크기
-constexpr int TABLE_HEIGHT = 22; // 테트리스판 세로 크기
+constexpr int BOARD_WIDTH = 12;  // 테트리스판 가로 크기
+constexpr int BOARD_HEIGHT = 22; // 테트리스판 세로 크기
 
 constexpr int EMPTY = 0;
 constexpr int WALL = 1;
