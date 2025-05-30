@@ -5,7 +5,7 @@
 #include <unordered_map>
 #include <vector>
 
-class BoardManager {
+class GameController {
   private:
     Block block;
     Block backupBlock;
@@ -14,7 +14,7 @@ class BoardManager {
     std::vector<std::vector<int>> backupBoard;
 
   public:
-    BoardManager();
+    GameController();
 
     bool isInvalidPosition(const int boardY, const int boardX);
     bool isMino(const int boardY, const int boardX);

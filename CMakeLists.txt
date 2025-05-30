@@ -16,7 +16,7 @@ set(SOURCES
     src/gameover/GameoverRenderer.cpp
     src/level/LevelManager.cpp
     src/level/LevelRenderer.cpp
-    src/board/BoardManager.cpp
+    src/core/GameController.cpp
     src/board/BoardRenderer.cpp
     
     

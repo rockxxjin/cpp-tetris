@@ -25,7 +25,7 @@ int Game::pollKeyPressed() {
 void Game::render() {
     window->clear(sf::Color::Black);
 
-    boardRenderer.draw(*window, boardManager);
+    boardRenderer.draw(*window, gameController);
     scoreRenderer.draw(*window, scoreManager);
     linesRenderer.draw(*window, linesManager);
     levelRenderer.draw(*window, levelManager);
@@ -39,20 +39,20 @@ void Game::render() {
 }
 
 void Game::processBlockActions() {
-    boardManager.operateBlock(GHOST_PIECE_DROP);
+    gameController.operateBlock(GHOST_PIECE_DROP);
     if (fallTimer > (float)levelManager.calculateFallInterval()) {
         fallTimer -= levelManager.calculateFallInterval();
-        boardManager.operateBlock(AUTO_DROP);
+        gameController.operateBlock(AUTO_DROP);
     }
-    boardManager.operateBlock(pollKeyPressed());
+    gameController.operateBlock(pollKeyPressed());
 }
 
 bool Game::checkGameOver() {
-    return boardManager.hasReachedEnd();
+    return gameController.hasReachedEnd();
 }
 
 void Game::handleLineClears() {
-    if (int lines = boardManager.deleteLinear()) {
+    if (int lines = gameController.deleteLinear()) {
         levelManager.decreaseRemainingLines(lines);
         linesManager.addLines(lines);
         scoreManager.addScore(scoreManager.calculateScore(lines, levelManager.getLevel()));
@@ -64,7 +64,7 @@ void Game::handleLineClears() {
 
 void Game::run() {
     gameState = GameState::PLAYING;
-    boardManager.createBlock(true);
+    gameController.createBlock(true);
 
     while (window->isOpen()) {
         float deltaTime = clock.restart().asSeconds();
@@ -76,7 +76,7 @@ void Game::run() {
             } else {
                 processBlockActions();
                 handleLineClears();
-                boardManager.createBlock(false);
+                gameController.createBlock(false);
             }
         }
         pollKeyPressed();
@@ -88,14 +88,16 @@ void Game::resetGame() {
     gameState = GameState::PLAYING;
     fallTimer = 0.0f;
 
+    // controller
+    gameController = GameController();
+
     // managers
     scoreManager = ScoreManager();
     linesManager = LinesManager();
     levelManager = LevelManager();
-    boardManager = BoardManager();
 
     // 새 블록 생성
-    boardManager.createBlock(true);
+    gameController.createBlock(true);
 }
 
 Game::Game() {

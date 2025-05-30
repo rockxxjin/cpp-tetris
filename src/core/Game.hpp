@@ -1,8 +1,8 @@
 #pragma once
 
-#include "board/BoardManager.hpp"
 #include "board/BoardRenderer.hpp"
 #include "constants/Constants.hpp"
+#include "core/GameController.hpp"
 #include "gameover/GameoverRenderer.hpp"
 #include "level/LevelManager.hpp"
 #include "level/LevelRenderer.hpp"
@@ -25,11 +25,13 @@ class Game {
     sf::Clock clock;
     float fallTimer;
 
+    // controller
+    GameController gameController;
+
     // managers
     ScoreManager scoreManager;
     LinesManager linesManager;
     LevelManager levelManager;
-    BoardManager boardManager;
 
     // renderers
     ScoreRenderer scoreRenderer;

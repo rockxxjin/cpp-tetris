@@ -1,8 +1,8 @@
-#include "BoardManager.hpp"
+#include "GameController.hpp"
 #include "utils/RandomGenerator.hpp"
 using namespace std;
 
-BoardManager::BoardManager() {
+GameController::GameController() {
     for (int boardY = 0; boardY < BOARD_HEIGHT; boardY++) {
         vector<int> temp;
         for (int boardX = 0; boardX < BOARD_WIDTH; boardX++) {
@@ -22,25 +22,25 @@ BoardManager::BoardManager() {
     }
 }
 
-bool BoardManager::isInvalidPosition(const int boardY, const int boardX) {
+bool GameController::isInvalidPosition(const int boardY, const int boardX) {
     return (boardY < 0 || boardX < 0 || boardY >= BOARD_HEIGHT || boardX >= BOARD_WIDTH);
 }
-bool BoardManager::isMino(const int boardY, const int boardX) {
+bool GameController::isMino(const int boardY, const int boardX) {
     return (5000 <= board[boardY][boardX] and board[boardY][boardX] <= 5006);
 }
-bool BoardManager::isWall(const int boardY, const int boardX) { return board[boardY][boardX] == WALL; }
-void BoardManager::restore() {
+bool GameController::isWall(const int boardY, const int boardX) { return board[boardY][boardX] == WALL; }
+void GameController::restore() {
     block = backupBlock;
     board = backupBoard;
 }
-void BoardManager::restoreBlock() { block = backupBlock; }
-void BoardManager::backup() {
+void GameController::restoreBlock() { block = backupBlock; }
+void GameController::backup() {
     backupBlock = block;
     backupBoard = board;
 }
 
 /*블럭 생성*/
-bool BoardManager::createBlock(bool isFirstBlock) {
+bool GameController::createBlock(bool isFirstBlock) {
     if (!isFirstBlock && !block.hasLanded()) {
         return true;
     }
@@ -65,7 +65,7 @@ bool BoardManager::createBlock(bool isFirstBlock) {
     return true;
 }
 
-void BoardManager::clearCellsOfType(int cellType) {
+void GameController::clearCellsOfType(int cellType) {
     for (int boardY = 0; boardY < BOARD_HEIGHT; boardY++) {
         for (int boardX = 0; boardX < BOARD_WIDTH; boardX++) {
             if (board[boardY][boardX] == cellType) {
@@ -75,7 +75,7 @@ void BoardManager::clearCellsOfType(int cellType) {
     }
 }
 
-bool BoardManager::canMoveOrRotateBlock(const int key) {
+bool GameController::canMoveOrRotateBlock(const int key) {
     if (key == sf::Keyboard::Up) {
         block.rotate();
     } else if (key == sf::Keyboard::Down || key == AUTO_DROP) {
@@ -110,7 +110,7 @@ bool BoardManager::canMoveOrRotateBlock(const int key) {
     return true;
 }
 
-void BoardManager::operateBlock(const int key) {
+void GameController::operateBlock(const int key) {
     if (key == sf::Keyboard::Up || key == sf::Keyboard::Down || key == sf::Keyboard::Left || key == sf::Keyboard::Right) {
         backup();
         clearCellsOfType(FALLING);
@@ -140,7 +140,7 @@ void BoardManager::operateBlock(const int key) {
     }
 }
 
-void BoardManager::landBlock() {
+void GameController::landBlock() {
     for (int blockY = 0; blockY < 4; blockY++) {
         for (int blockX = 0; blockX < 4; blockX++) {
             int boardY = blockY + block.getY();
@@ -160,7 +160,7 @@ void BoardManager::landBlock() {
     block.setLanded(true);
 }
 
-void BoardManager::landGhostPiece() {
+void GameController::landGhostPiece() {
     for (int blockY = 0; blockY < 4; blockY++) {
         for (int blockX = 0; blockX < 4; blockX++) {
             int boardY = blockY + block.getY();
@@ -181,7 +181,7 @@ void BoardManager::landGhostPiece() {
     }
 }
 
-void BoardManager::dropBlockUntilCollision() {
+void GameController::dropBlockUntilCollision() {
     while (true) {
         for (int blockY = 0; blockY < 4; blockY++) {
             for (int blockX = 0; blockX < 4; blockX++) {
@@ -205,14 +205,14 @@ void BoardManager::dropBlockUntilCollision() {
     }
 }
 
-void BoardManager::hardDropBlock() {
+void GameController::hardDropBlock() {
     clearCellsOfType(FALLING);
     dropBlockUntilCollision();
     block.up();
     landBlock();
 }
 
-void BoardManager::hardDropGhostPiece() {
+void GameController::hardDropGhostPiece() {
     backup();
     clearCellsOfType(GHOST_PIECE);
     dropBlockUntilCollision();
@@ -222,7 +222,7 @@ void BoardManager::hardDropGhostPiece() {
 }
 
 /*일직선 삭제*/
-int BoardManager::deleteLinear() {
+int GameController::deleteLinear() {
     int cnt = 0;
     for (int boardY = END_Y + 1; boardY < BOARD_HEIGHT - 1; boardY++) {
         bool isLinear = true;
@@ -246,7 +246,7 @@ int BoardManager::deleteLinear() {
     return cnt;
 }
 /*쌓은 블록이 게임 종료 선에 닿았는지 체크*/
-bool BoardManager::hasReachedEnd() {
+bool GameController::hasReachedEnd() {
     for (int boardX = 1; boardX < BOARD_WIDTH - 1; boardX++) {
         if (isMino(END_Y, boardX)) {
             return true;
@@ -255,10 +255,10 @@ bool BoardManager::hasReachedEnd() {
     return false;
 }
 
-int BoardManager::getCellValue(const int boardY, const int boardX) {
+int GameController::getCellValue(const int boardY, const int boardX) {
     return board[boardY][boardX];
 }
 
-int BoardManager::getFallingTetrominoType() {
+int GameController::getFallingTetrominoType() {
     return block.getMinoType();
 }
