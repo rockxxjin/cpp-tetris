@@ -15,4 +15,7 @@ class BoardManager {
     bool isMino(const int boardY, const int boardX) const;
     bool isWall(const int boardY, const int boardX) const;
     const std::vector<std::vector<int>>& get() const;
+    bool hasReachedEnd();
+    int deleteLinear();
+    void clearCellsOfType(int cellType);
 };

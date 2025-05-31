@@ -43,3 +43,48 @@ bool BoardManager::isWall(const int boardY, const int boardX) const {
 const std::vector<std::vector<int>>& BoardManager::get() const {
     return this->board;
 }
+
+/*쌓은 블록이 게임 종료 선에 닿았는지 체크*/
+bool BoardManager::hasReachedEnd() {
+    for (int boardX = 1; boardX < BOARD_WIDTH - 1; boardX++) {
+        if (isMino(END_Y, boardX)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/*일직선 삭제*/
+int BoardManager::deleteLinear() {
+    int cnt = 0;
+    for (int boardY = END_Y + 1; boardY < BOARD_HEIGHT - 1; boardY++) {
+        bool isLinear = true;
+        for (int boardX = 1; boardX < BOARD_WIDTH - 1; boardX++) {
+            if (!isMino(boardY, boardX)) {
+                isLinear = false;
+                break;
+            }
+        }
+        if (isLinear) {
+            cnt++;
+            for (int shiftY = boardY; shiftY > END_Y + 1; shiftY--) {
+                for (int boardX = 1; boardX < BOARD_WIDTH - 1; boardX++) {
+                    if (board[shiftY - 1][boardX] != FALLING) {
+                        board[shiftY][boardX] = board[shiftY - 1][boardX];
+                    }
+                }
+            }
+        }
+    }
+    return cnt;
+}
+
+void BoardManager::clearCellsOfType(int cellType) {
+    for (int boardY = 0; boardY < BOARD_HEIGHT; boardY++) {
+        for (int boardX = 0; boardX < BOARD_WIDTH; boardX++) {
+            if (board[boardY][boardX] == cellType) {
+                setCell(boardY, boardX, EMPTY);
+            }
+        }
+    }
+}

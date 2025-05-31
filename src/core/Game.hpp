@@ -50,7 +50,6 @@ class Game {
     void resetGame();
     Game();
     bool spawnBlock(bool isFirstBlock);
-    void clearCellsOfType(int cellType);
     bool canMoveOrRotateBlock(const int key);
     void dropBlockUntilCollision();
     void landBlock();
@@ -58,6 +57,4 @@ class Game {
     void landGhostPiece();
     void hardDropGhostPiece();
     void operateBlock(const int key);
-    int deleteLinear();
-    bool hasReachedEnd();
 };

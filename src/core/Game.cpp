@@ -48,11 +48,11 @@ void Game::processBlockActions() {
 }
 
 bool Game::checkGameOver() {
-    return hasReachedEnd();
+    return boardManager.hasReachedEnd();
 }
 
 void Game::handleLineClears() {
-    if (int lines = deleteLinear()) {
+    if (int lines = boardManager.deleteLinear()) {
         levelManager.decreaseRemainingLines(lines);
         linesManager.addLines(lines);
         scoreManager.addScore(scoreManager.calculateScore(lines, levelManager.getLevel()));
@@ -126,17 +126,6 @@ bool Game::spawnBlock(bool isFirstBlock) {
         }
     }
     return true;
-}
-
-void Game::clearCellsOfType(int cellType) {
-    const auto& board = boardManager.get();
-    for (int boardY = 0; boardY < BOARD_HEIGHT; boardY++) {
-        for (int boardX = 0; boardX < BOARD_WIDTH; boardX++) {
-            if (board[boardY][boardX] == cellType) {
-                boardManager.setCell(boardY, boardX, EMPTY);
-            }
-        }
-    }
 }
 
 bool Game::canMoveOrRotateBlock(const int key) {
@@ -223,7 +212,7 @@ void Game::dropBlockUntilCollision() {
 }
 
 void Game::hardDropBlock() {
-    clearCellsOfType(FALLING);
+    boardManager.clearCellsOfType(FALLING);
     dropBlockUntilCollision();
     blockManager.up();
     landBlock();
@@ -254,7 +243,7 @@ void Game::landGhostPiece() {
 
 void Game::hardDropGhostPiece() {
     blockManager.restore();
-    clearCellsOfType(GHOST_PIECE);
+    boardManager.clearCellsOfType(GHOST_PIECE);
     dropBlockUntilCollision();
     blockManager.up();
     landGhostPiece();
@@ -266,7 +255,7 @@ void Game::operateBlock(const int key) {
     boardManager.backup();
     if (key == sf::Keyboard::Up || key == sf::Keyboard::Down || key == sf::Keyboard::Left || key == sf::Keyboard::Right) {
 
-        clearCellsOfType(FALLING);
+        boardManager.clearCellsOfType(FALLING);
         if (!canMoveOrRotateBlock(key)) {
             blockManager.restore();
             boardManager.restore();
@@ -275,7 +264,7 @@ void Game::operateBlock(const int key) {
     }
 
     if (key == AUTO_DROP) {
-        clearCellsOfType(FALLING);
+        boardManager.clearCellsOfType(FALLING);
         if (!canMoveOrRotateBlock(key)) {
             blockManager.restore();
             boardManager.restore();
@@ -292,39 +281,4 @@ void Game::operateBlock(const int key) {
     if (key == GHOST_PIECE_DROP) {
         hardDropGhostPiece();
     }
-}
-
-/*일직선 삭제*/
-int Game::deleteLinear() {
-    const auto& board = boardManager.get();
-    int cnt = 0;
-    for (int boardY = END_Y + 1; boardY < BOARD_HEIGHT - 1; boardY++) {
-        bool isLinear = true;
-        for (int boardX = 1; boardX < BOARD_WIDTH - 1; boardX++) {
-            if (!boardManager.isMino(boardY, boardX)) {
-                isLinear = false;
-                break;
-            }
-        }
-        if (isLinear) {
-            cnt++;
-            for (int shiftY = boardY; shiftY > END_Y + 1; shiftY--) {
-                for (int boardX = 1; boardX < BOARD_WIDTH - 1; boardX++) {
-                    if (board[shiftY - 1][boardX] != FALLING) {
-                        boardManager.setCell(shiftY, boardX, board[shiftY - 1][boardX]);
-                    }
-                }
-            }
-        }
-    }
-    return cnt;
-}
-/*쌓은 블록이 게임 종료 선에 닿았는지 체크*/
-bool Game::hasReachedEnd() {
-    for (int boardX = 1; boardX < BOARD_WIDTH - 1; boardX++) {
-        if (boardManager.isMino(END_Y, boardX)) {
-            return true;
-        }
-    }
-    return false;
 }
