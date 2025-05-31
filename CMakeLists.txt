@@ -9,16 +9,17 @@ set(SOURCES
     src/core/Game.cpp
     src/utils/RandomGenerator.cpp
     src/score/ScoreManager.cpp
-    src/score/ScoreRenderer.cpp
     src/lines/LinesManager.cpp
-    src/lines/LinesRenderer.cpp
-    src/title/TitleRenderer.cpp
-    src/gameover/GameoverRenderer.cpp
     src/level/LevelManager.cpp
-    src/level/LevelRenderer.cpp
-    src/core/GameController.cpp
-    src/board/BoardRenderer.cpp
-    
+    src/board/BoardManager.cpp
+    src/block/BlockManager.cpp
+
+    src/ui/ScoreRenderer.cpp
+    src/ui/LinesRenderer.cpp
+    src/ui/TitleRenderer.cpp    
+    src/ui/GameoverRenderer.cpp
+    src/ui/LevelRenderer.cpp
+    src/ui/BoardRenderer.cpp
     
 )
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ScoreManager.hpp"
+#include "score/ScoreManager.hpp"
 #include <SFML/Graphics.hpp>
 class ScoreRenderer {
 

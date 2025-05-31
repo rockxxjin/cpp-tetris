@@ -25,7 +25,7 @@ int Game::pollKeyPressed() {
 void Game::render() {
     window->clear(sf::Color::Black);
 
-    boardRenderer.draw(*window, gameController);
+    boardRenderer.draw(*window, boardManager, blockManager);
     scoreRenderer.draw(*window, scoreManager);
     linesRenderer.draw(*window, linesManager);
     levelRenderer.draw(*window, levelManager);
@@ -39,20 +39,20 @@ void Game::render() {
 }
 
 void Game::processBlockActions() {
-    gameController.operateBlock(GHOST_PIECE_DROP);
+    operateBlock(GHOST_PIECE_DROP);
     if (fallTimer > (float)levelManager.calculateFallInterval()) {
         fallTimer -= levelManager.calculateFallInterval();
-        gameController.operateBlock(AUTO_DROP);
+        operateBlock(AUTO_DROP);
     }
-    gameController.operateBlock(pollKeyPressed());
+    operateBlock(pollKeyPressed());
 }
 
 bool Game::checkGameOver() {
-    return gameController.hasReachedEnd();
+    return hasReachedEnd();
 }
 
 void Game::handleLineClears() {
-    if (int lines = gameController.deleteLinear()) {
+    if (int lines = deleteLinear()) {
         levelManager.decreaseRemainingLines(lines);
         linesManager.addLines(lines);
         scoreManager.addScore(scoreManager.calculateScore(lines, levelManager.getLevel()));
@@ -64,7 +64,7 @@ void Game::handleLineClears() {
 
 void Game::run() {
     gameState = GameState::PLAYING;
-    gameController.createBlock(true);
+    spawnBlock(true);
 
     while (window->isOpen()) {
         float deltaTime = clock.restart().asSeconds();
@@ -76,7 +76,7 @@ void Game::run() {
             } else {
                 processBlockActions();
                 handleLineClears();
-                gameController.createBlock(false);
+                spawnBlock(false);
             }
         }
         pollKeyPressed();
@@ -88,19 +88,243 @@ void Game::resetGame() {
     gameState = GameState::PLAYING;
     fallTimer = 0.0f;
 
-    // controller
-    gameController = GameController();
-
     // managers
     scoreManager = ScoreManager();
     linesManager = LinesManager();
     levelManager = LevelManager();
+    blockManager = BlockManager();
+    boardManager = BoardManager();
 
     // 새 블록 생성
-    gameController.createBlock(true);
+    spawnBlock(true);
 }
 
 Game::Game() {
     window = std::make_unique<sf::RenderWindow>(sf::VideoMode(1000, 800), "Tetris");
     window->setFramerateLimit(60);
+}
+
+bool Game::spawnBlock(bool isFirstBlock) {
+    if (!isFirstBlock && !blockManager.get().hasLanded()) {
+        return true;
+    }
+
+    blockManager.generate();
+    const Block& block = blockManager.get();
+    for (int blockY = 0; blockY < 4; blockY++) {
+        for (int blockX = 0; blockX < 4; blockX++) {
+            int boardY = blockY + block.getY();
+            int boardX = blockX + block.getX();
+
+            if (boardManager.isInvalidPosition(boardY, boardX)) {
+                continue;
+            }
+            if (boardManager.isMino(boardY, boardX)) {
+                return false;
+            }
+            boardManager.setCell(boardY, boardX, block.getShape(block.getRotationCount(), blockY, blockX));
+        }
+    }
+    return true;
+}
+
+void Game::clearCellsOfType(int cellType) {
+    const auto& board = boardManager.get();
+    for (int boardY = 0; boardY < BOARD_HEIGHT; boardY++) {
+        for (int boardX = 0; boardX < BOARD_WIDTH; boardX++) {
+            if (board[boardY][boardX] == cellType) {
+                boardManager.setCell(boardY, boardX, EMPTY);
+            }
+        }
+    }
+}
+
+bool Game::canMoveOrRotateBlock(const int key) {
+    const Block& block = blockManager.get();
+    if (key == sf::Keyboard::Up) {
+        blockManager.rotate();
+    } else if (key == sf::Keyboard::Down || key == AUTO_DROP) {
+        blockManager.down();
+    } else if (key == sf::Keyboard::Left) {
+        blockManager.left();
+    } else if (key == sf::Keyboard::Right) {
+        blockManager.right();
+    }
+
+    const auto& board = boardManager.get();
+
+    for (int blockY = 0; blockY < 4; blockY++) {
+        for (int blockX = 0; blockX < 4; blockX++) {
+            int boardY = blockY + block.getY();
+            int boardX = blockX + block.getX();
+
+            if (boardManager.isInvalidPosition(boardY, boardX)) {
+                continue;
+            }
+
+            int blockValue = block.getShape(block.getRotationCount(), blockY, blockX);
+
+            if (blockValue != FALLING) {
+                continue;
+            }
+
+            if (board[boardY][boardX] != EMPTY && board[boardY][boardX] != GHOST_PIECE) {
+                return false;
+            }
+            boardManager.setCell(boardY, boardX, blockValue); // 블럭을 이동시킴
+        }
+    }
+    return true;
+}
+
+void Game::landBlock() {
+    const Block& block = blockManager.get();
+    for (int blockY = 0; blockY < 4; blockY++) {
+        for (int blockX = 0; blockX < 4; blockX++) {
+            int boardY = blockY + block.getY();
+            int boardX = blockX + block.getX();
+
+            if (boardManager.isInvalidPosition(boardY, boardX)) {
+                continue;
+            }
+
+            int blockValue = block.getShape(block.getRotationCount(), blockY, blockX);
+            if (blockValue != FALLING) {
+                continue;
+            }
+            boardManager.setCell(boardY, boardX, block.getMinoType());
+        }
+    }
+    blockManager.land();
+}
+void Game::dropBlockUntilCollision() {
+    const Block& block = blockManager.get();
+    while (true) {
+        for (int blockY = 0; blockY < 4; blockY++) {
+            for (int blockX = 0; blockX < 4; blockX++) {
+                int boardY = blockY + block.getY();
+                int boardX = blockX + block.getX();
+
+                if (boardManager.isInvalidPosition(boardY, boardX)) {
+                    continue;
+                }
+
+                int blockValue = block.getShape(block.getRotationCount(), blockY, blockX);
+                if (blockValue != FALLING) {
+                    continue;
+                }
+                if (boardManager.isMino(boardY, boardX) || boardManager.isWall(boardY, boardX)) {
+                    return;
+                }
+            }
+        }
+        blockManager.down();
+    }
+}
+
+void Game::hardDropBlock() {
+    clearCellsOfType(FALLING);
+    dropBlockUntilCollision();
+    blockManager.up();
+    landBlock();
+}
+
+void Game::landGhostPiece() {
+    const Block& block = blockManager.get();
+    const auto& board = boardManager.get();
+    for (int blockY = 0; blockY < 4; blockY++) {
+        for (int blockX = 0; blockX < 4; blockX++) {
+            int boardY = blockY + block.getY();
+            int boardX = blockX + block.getX();
+
+            if (boardManager.isInvalidPosition(boardY, boardX)) {
+                continue;
+            }
+
+            int blockValue = block.getShape(block.getRotationCount(), blockY, blockX);
+            if (blockValue != FALLING) {
+                continue;
+            }
+            if (board[boardY][boardX] == EMPTY) {
+                boardManager.setCell(boardY, boardX, GHOST_PIECE);
+            }
+        }
+    }
+}
+
+void Game::hardDropGhostPiece() {
+    blockManager.restore();
+    clearCellsOfType(GHOST_PIECE);
+    dropBlockUntilCollision();
+    blockManager.up();
+    landGhostPiece();
+    blockManager.restore();
+}
+
+void Game::operateBlock(const int key) {
+    blockManager.backup();
+    boardManager.backup();
+    if (key == sf::Keyboard::Up || key == sf::Keyboard::Down || key == sf::Keyboard::Left || key == sf::Keyboard::Right) {
+
+        clearCellsOfType(FALLING);
+        if (!canMoveOrRotateBlock(key)) {
+            blockManager.restore();
+            boardManager.restore();
+        }
+        return;
+    }
+
+    if (key == AUTO_DROP) {
+        clearCellsOfType(FALLING);
+        if (!canMoveOrRotateBlock(key)) {
+            blockManager.restore();
+            boardManager.restore();
+            landBlock();
+        }
+        return;
+    }
+
+    if (key == sf::Keyboard::Space) {
+        hardDropBlock();
+        return;
+    }
+
+    if (key == GHOST_PIECE_DROP) {
+        hardDropGhostPiece();
+    }
+}
+
+/*일직선 삭제*/
+int Game::deleteLinear() {
+    const auto& board = boardManager.get();
+    int cnt = 0;
+    for (int boardY = END_Y + 1; boardY < BOARD_HEIGHT - 1; boardY++) {
+        bool isLinear = true;
+        for (int boardX = 1; boardX < BOARD_WIDTH - 1; boardX++) {
+            if (!boardManager.isMino(boardY, boardX)) {
+                isLinear = false;
+                break;
+            }
+        }
+        if (isLinear) {
+            cnt++;
+            for (int shiftY = boardY; shiftY > END_Y + 1; shiftY--) {
+                for (int boardX = 1; boardX < BOARD_WIDTH - 1; boardX++) {
+                    if (board[shiftY - 1][boardX] != FALLING) {
+                        boardManager.setCell(shiftY, boardX, board[shiftY - 1][boardX]);
+                    }
+                }
+            }
+        }
+    }
+    return cnt;
+}
+/*쌓은 블록이 게임 종료 선에 닿았는지 체크*/
+bool Game::hasReachedEnd() {
+    for (int boardX = 1; boardX < BOARD_WIDTH - 1; boardX++) {
+        if (boardManager.isMino(END_Y, boardX)) {
+            return true;
+        }
+    }
+    return false;
 }

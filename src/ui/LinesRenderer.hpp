@@ -1,6 +1,6 @@
 #pragma once
 
-#include "LinesManager.hpp"
+#include "lines/LinesManager.hpp"
 #include <SFML/Graphics.hpp>
 class LinesRenderer {
   private:

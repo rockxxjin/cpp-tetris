@@ -1,7 +1,5 @@
 #pragma once
 
-#include "constants/Constants.hpp"
-#include <ctime>
 class Block {
   private:
     int shape[4][4][4]; // shape[rotate][y][x]
@@ -12,15 +10,13 @@ class Block {
     int minoType;
 
   public:
-    Block();
-    Block(int minoType);
-    int getShape(int rotationCount, int y, int x);
-    int getX();
-    int getY();
-    int getRotationCount();
+    int getShape(int rotationCount, int y, int x) const;
+    int getX() const;
+    int getY() const;
+    int getRotationCount() const;
 
-    bool hasLanded();
-    int getMinoType();
+    bool hasLanded() const;
+    int getMinoType() const;
     void setLanded(bool landed);
     void down();
     void left();
@@ -29,6 +25,7 @@ class Block {
     void setX(int x);
     void setY(int y);
     void setRotationCount(int r);
-    void setShape(int r, int y, int x, int value);
+    void setShape(const int shape[4][4][4]);
     void up();
+    void setMinoType(const int minoType);
 };

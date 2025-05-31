@@ -1,16 +1,16 @@
 #pragma once
 
-#include "board/BoardRenderer.hpp"
+#include "block/BlockManager.hpp"
 #include "constants/Constants.hpp"
-#include "core/GameController.hpp"
-#include "gameover/GameoverRenderer.hpp"
 #include "level/LevelManager.hpp"
-#include "level/LevelRenderer.hpp"
 #include "lines/LinesManager.hpp"
-#include "lines/LinesRenderer.hpp"
 #include "score/ScoreManager.hpp"
-#include "score/ScoreRenderer.hpp"
-#include "title/TitleRenderer.hpp"
+#include "ui/BoardRenderer.hpp"
+#include "ui/GameoverRenderer.hpp"
+#include "ui/LevelRenderer.hpp"
+#include "ui/LinesRenderer.hpp"
+#include "ui/ScoreRenderer.hpp"
+#include "ui/TitleRenderer.hpp"
 #include <SFML/Graphics.hpp>
 
 enum class GameState {
@@ -25,13 +25,12 @@ class Game {
     sf::Clock clock;
     float fallTimer;
 
-    // controller
-    GameController gameController;
-
     // managers
     ScoreManager scoreManager;
     LinesManager linesManager;
     LevelManager levelManager;
+    BlockManager blockManager;
+    BoardManager boardManager;
 
     // renderers
     ScoreRenderer scoreRenderer;
@@ -50,4 +49,15 @@ class Game {
     void run();
     void resetGame();
     Game();
+    bool spawnBlock(bool isFirstBlock);
+    void clearCellsOfType(int cellType);
+    bool canMoveOrRotateBlock(const int key);
+    void dropBlockUntilCollision();
+    void landBlock();
+    void hardDropBlock();
+    void landGhostPiece();
+    void hardDropGhostPiece();
+    void operateBlock(const int key);
+    int deleteLinear();
+    bool hasReachedEnd();
 };

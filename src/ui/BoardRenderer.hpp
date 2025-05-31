@@ -1,6 +1,7 @@
 #pragma once
 
-#include "core/GameController.hpp"
+#include "block/BlockManager.hpp"
+#include "board/BoardManager.hpp"
 #include "entities/Block.hpp"
 #include <SFML/Graphics.hpp>
 #include <unordered_map>
@@ -13,5 +14,5 @@ class BoardRenderer {
   public:
     BoardRenderer();
     bool isMino(const int cellType);
-    void draw(sf::RenderWindow& window, GameController& gameController);
+    void draw(sf::RenderWindow& window, BoardManager& boardManger, BlockManager& blockManager);
 };

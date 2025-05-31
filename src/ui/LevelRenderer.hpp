@@ -1,6 +1,6 @@
 #pragma once
 
-#include "LevelManager.hpp"
+#include "level/LevelManager.hpp"
 #include <SFML/Graphics.hpp>
 class LevelRenderer {
   private:
